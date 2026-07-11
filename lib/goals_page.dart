@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import 'app_theme.dart';
 import 'goal_service.dart';
 import 'premium_page.dart';
 import 'subscription_service.dart';
@@ -401,311 +402,412 @@ class _GoalsPageState extends State<GoalsPage> {
         ? (totalSaved / totalTarget).clamp(0.0, 1.0)
         : 0;
 
+    final int activeGoals = goals.where((goal) {
+      final double targetAmount = (goal['targetAmount'] as num).toDouble();
+      final double savedAmount = (goal['savedAmount'] as num).toDouble();
+      final double progress = targetAmount > 0 ? (savedAmount / targetAmount).clamp(0.0, 1.0) : 0;
+      return progress < 1;
+    }).length;
+
+    final int completedGoals = goals.length - activeGoals;
+
     return Scaffold(
+      backgroundColor: const Color(0xFFF8FAFC),
       appBar: AppBar(
-        title: const Text('Financial Goals'),
-        centerTitle: true,
+        automaticallyImplyLeading: false,
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        toolbarHeight: 84,
+        titleSpacing: 0,
+        title: Padding(
+          padding: const EdgeInsets.only(left: 4),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text('Goals', style: TextStyle(color: AppTheme.text, fontSize: 22, fontWeight: FontWeight.w800)),
+              const SizedBox(height: 2),
+              Text('Achieve your financial dreams', style: TextStyle(color: AppTheme.subtitle, fontSize: 13)),
+            ],
+          ),
+        ),
+        actions: [
+          Container(
+            margin: const EdgeInsets.only(right: 12),
+            width: 42,
+            height: 42,
+            decoration: BoxDecoration(
+              gradient: const LinearGradient(colors: [AppTheme.primary, AppTheme.warning]),
+              borderRadius: BorderRadius.circular(14),
+              boxShadow: [BoxShadow(color: AppTheme.primary.withOpacity(0.16), blurRadius: 12, offset: const Offset(0, 6))],
+            ),
+            child: const Center(child: Icon(Icons.notifications_none_rounded, color: Colors.white, size: 22)),
+          ),
+          Container(
+            margin: const EdgeInsets.only(right: 16),
+            width: 42,
+            height: 42,
+            decoration: BoxDecoration(
+              color: const Color(0xFF1D4ED8),
+              borderRadius: BorderRadius.circular(14),
+            ),
+            child: const Center(child: Text('A', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700))),
+          ),
+        ],
       ),
       body: isLoading
-          ? const Center(
-              child: CircularProgressIndicator(),
-            )
+          ? const Center(child: CircularProgressIndicator(color: AppTheme.primary))
           : goals.isEmpty
               ? Center(
-                  child: Padding(
-                    padding: const EdgeInsets.all(24),
-                    child: Column(
-                      mainAxisAlignment:
-                          MainAxisAlignment.center,
-                      children: [
-                        const Icon(
-                          Icons.flag_outlined,
-                          size: 80,
-                          color: Colors.deepPurple,
-                        ),
-
-                        const SizedBox(height: 20),
-
-                        const Text(
-                          'No Financial Goals Yet',
-                          style: TextStyle(
-                            fontSize: 24,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-
-                        const SizedBox(height: 10),
-
-                        const Text(
-                          'Create your first goal and start tracking your financial progress.',
-                          textAlign: TextAlign.center,
-                        ),
-
-                        const SizedBox(height: 25),
-
-                        ElevatedButton.icon(
-                          onPressed: tryCreateGoal,
-                          icon: const Icon(Icons.add),
-                          label: const Text(
-                            'Create First Goal',
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                )
-              : RefreshIndicator(
-                  onRefresh: loadGoals,
-                  child: ListView(
-                    padding: const EdgeInsets.all(16),
-                    children: [
-                      Card(
-                        elevation: 8,
-                        child: Padding(
-                          padding:
-                              const EdgeInsets.all(20),
-                          child: Column(
-                            children: [
-                              const Text(
-                                'Overall Goal Progress',
-                                style: TextStyle(
-                                  fontSize: 20,
-                                  fontWeight:
-                                      FontWeight.bold,
-                                ),
-                              ),
-
-                              const SizedBox(height: 15),
-
-                              Text(
-                                '${(overallProgress * 100).toStringAsFixed(0)}%',
-                                style: const TextStyle(
-                                  fontSize: 38,
-                                  fontWeight:
-                                      FontWeight.bold,
-                                ),
-                              ),
-
-                              const SizedBox(height: 15),
-
-                              LinearProgressIndicator(
-                                value: overallProgress,
-                                minHeight: 12,
-                                borderRadius:
-                                    BorderRadius.circular(10),
-                              ),
-
-                              const SizedBox(height: 15),
-
-                              Text(
-                                '₹${totalSaved.toStringAsFixed(0)} saved of ₹${totalTarget.toStringAsFixed(0)}',
-                                textAlign: TextAlign.center,
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-
-                      const SizedBox(height: 20),
-
-                      Row(
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 420),
+                    child: Padding(
+                      padding: const EdgeInsets.all(24),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          const Expanded(
-                            child: Text(
-                              'My Goals',
-                              style: TextStyle(
-                                fontSize: 22,
-                                fontWeight: FontWeight.bold,
-                              ),
+                          Container(
+                            padding: const EdgeInsets.all(18),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(28),
+                              boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 16, offset: const Offset(0, 8))],
                             ),
+                            child: const Icon(Icons.flag_circle_rounded, size: 72, color: AppTheme.primary),
                           ),
-                          Text(
-                            '${goals.length} goal${goals.length == 1 ? '' : 's'}',
+                          const SizedBox(height: 20),
+                          const Text('No financial goals yet', style: TextStyle(fontSize: 24, fontWeight: FontWeight.w800, color: AppTheme.text)),
+                          const SizedBox(height: 8),
+                          const Text('Create your first goal and start tracking your financial progress.', textAlign: TextAlign.center, style: TextStyle(color: AppTheme.subtitle, height: 1.4)),
+                          const SizedBox(height: 18),
+                          ElevatedButton.icon(
+                            onPressed: tryCreateGoal,
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: AppTheme.primary,
+                              foregroundColor: Colors.white,
+                              padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                            ),
+                            icon: const Icon(Icons.add_circle_rounded),
+                            label: const Text('Create First Goal'),
                           ),
                         ],
                       ),
-
-                      const SizedBox(height: 15),
-
-                      ...goals.map((goal) {
-                        final double targetAmount =
-                            (goal['targetAmount'] as num)
-                                .toDouble();
-
-                        final double savedAmount =
-                            (goal['savedAmount'] as num)
-                                .toDouble();
-
-                        final double progress =
-                            targetAmount > 0
-                                ? (savedAmount /
-                                        targetAmount)
-                                    .clamp(0.0, 1.0)
-                                : 0;
-
-                        final bool isCompleted =
-                            progress >= 1;
-
-                        return Card(
-                          elevation: 5,
-                          margin:
-                              const EdgeInsets.only(
-                            bottom: 16,
-                          ),
-                          child: Padding(
-                            padding:
-                                const EdgeInsets.all(16),
-                            child: Column(
-                              children: [
-                                Row(
-                                  children: [
-                                    CircleAvatar(
-                                      child: Icon(
-                                        getGoalIcon(
-                                          goal['goalName']
-                                              .toString(),
+                    ),
+                  ),
+                )
+              : Center(
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 420),
+                    child: RefreshIndicator(
+                      onRefresh: loadGoals,
+                      child: ListView(
+                        padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
+                        children: [
+                          _buildAnimatedSection(
+                            index: 0,
+                            child: Container(
+                              padding: const EdgeInsets.all(20),
+                              decoration: BoxDecoration(
+                                gradient: const LinearGradient(colors: [Color(0xFF0F172A), Color(0xFF2563EB)], begin: Alignment.topLeft, end: Alignment.bottomRight),
+                                borderRadius: BorderRadius.circular(28),
+                                boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.08), blurRadius: 22, offset: const Offset(0, 10))],
+                              ),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Row(
+                                    children: [
+                                      Expanded(
+                                        child: Column(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          children: [
+                                            const Text('Overall progress', style: TextStyle(color: Colors.white70, fontSize: 12.5)),
+                                            const SizedBox(height: 4),
+                                            TweenAnimationBuilder<double>(
+                                              tween: Tween(begin: 0.0, end: overallProgress * 100),
+                                              duration: const Duration(milliseconds: 900),
+                                              curve: Curves.easeOutCubic,
+                                              builder: (context, animatedValue, _) {
+                                                return Text('${animatedValue.toStringAsFixed(0)}%', style: const TextStyle(color: Colors.white, fontSize: 34, fontWeight: FontWeight.w800));
+                                              },
+                                            ),
+                                          ],
                                         ),
                                       ),
-                                    ),
-
-                                    const SizedBox(
-                                      width: 12,
-                                    ),
-
-                                    Expanded(
-                                      child: Column(
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment
-                                                .start,
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                                        decoration: BoxDecoration(color: Colors.white.withOpacity(0.16), borderRadius: BorderRadius.circular(999)),
+                                        child: const Row(
+                                          children: [
+                                            Icon(Icons.workspace_premium_rounded, color: Colors.white, size: 14),
+                                            SizedBox(width: 4),
+                                            Text('Premium', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 11)),
+                                          ],
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 18),
+                                  Stack(
+                                    alignment: Alignment.center,
+                                    children: [
+                                      SizedBox(
+                                        width: 110,
+                                        height: 110,
+                                        child: TweenAnimationBuilder<double>(
+                                          tween: Tween(begin: 0.0, end: overallProgress),
+                                          duration: const Duration(milliseconds: 900),
+                                          curve: Curves.easeOutCubic,
+                                          builder: (context, animatedValue, _) {
+                                            return CircularProgressIndicator(
+                                              value: animatedValue,
+                                              strokeWidth: 10,
+                                              backgroundColor: Colors.white.withOpacity(0.18),
+                                              valueColor: const AlwaysStoppedAnimation<Color>(Colors.white),
+                                            );
+                                          },
+                                        ),
+                                      ),
+                                      Column(
                                         children: [
-                                          Text(
-                                            goal['goalName']
-                                                .toString(),
-                                            style:
-                                                const TextStyle(
-                                              fontSize: 18,
-                                              fontWeight:
-                                                  FontWeight
-                                                      .bold,
-                                            ),
-                                          ),
-
-                                          const SizedBox(
-                                            height: 4,
-                                          ),
-
-                                          Text(
-                                            isCompleted
-                                                ? 'Goal Completed 🎉'
-                                                : '${(progress * 100).toStringAsFixed(0)}% completed',
+                                          const Text('Saved', style: TextStyle(color: Colors.white70, fontSize: 12)),
+                                          const SizedBox(height: 2),
+                                          TweenAnimationBuilder<double>(
+                                            tween: Tween(begin: 0.0, end: totalSaved),
+                                            duration: const Duration(milliseconds: 900),
+                                            curve: Curves.easeOutCubic,
+                                            builder: (context, animatedValue, _) {
+                                              return Text('₹${animatedValue.toStringAsFixed(0)}', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 16));
+                                            },
                                           ),
                                         ],
                                       ),
-                                    ),
-
-                                    PopupMenuButton<String>(
-                                      onSelected: (value) {
-                                        if (value == 'edit') {
-                                          showGoalDialog(
-                                            existingGoal: goal,
-                                          );
-                                        }
-
-                                        if (value == 'delete') {
-                                          deleteGoal(goal);
-                                        }
-                                      },
-                                      itemBuilder:
-                                          (context) => [
-                                        const PopupMenuItem(
-                                          value: 'edit',
-                                          child: Row(
-                                            children: [
-                                              Icon(
-                                                Icons.edit,
-                                              ),
-                                              SizedBox(
-                                                width: 10,
-                                              ),
-                                              Text('Edit'),
-                                            ],
-                                          ),
-                                        ),
-                                        const PopupMenuItem(
-                                          value: 'delete',
-                                          child: Row(
-                                            children: [
-                                              Icon(
-                                                Icons.delete,
-                                                color:
-                                                    Colors.red,
-                                              ),
-                                              SizedBox(
-                                                width: 10,
-                                              ),
-                                              Text(
-                                                'Delete',
-                                              ),
-                                            ],
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ],
-                                ),
-
-                                const SizedBox(height: 20),
-
-                                LinearProgressIndicator(
-                                  value: progress,
-                                  minHeight: 10,
-                                  borderRadius:
-                                      BorderRadius.circular(
-                                    10,
+                                    ],
                                   ),
-                                ),
-
-                                const SizedBox(height: 15),
-
-                                Row(
-                                  mainAxisAlignment:
-                                      MainAxisAlignment
-                                          .spaceBetween,
-                                  children: [
-                                    Text(
-                                      'Saved\n₹${savedAmount.toStringAsFixed(0)}',
-                                    ),
-
-                                    Text(
-                                      'Remaining\n₹${(targetAmount - savedAmount).clamp(0, targetAmount).toStringAsFixed(0)}',
-                                      textAlign:
-                                          TextAlign.center,
-                                    ),
-
-                                    Text(
-                                      'Target\n₹${targetAmount.toStringAsFixed(0)}',
-                                      textAlign:
-                                          TextAlign.end,
-                                    ),
-                                  ],
-                                ),
-                              ],
+                                  const SizedBox(height: 18),
+                                  Row(
+                                    children: [
+                                      Expanded(child: _buildSummaryMetric('Active', activeGoals.toDouble(), Icons.trending_up_rounded)),
+                                      const SizedBox(width: 10),
+                                      Expanded(child: _buildSummaryMetric('Completed', completedGoals.toDouble(), Icons.check_circle_rounded)),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 10),
+                                  Row(
+                                    children: [
+                                      Expanded(child: _buildSummaryMetric('Target', totalTarget, Icons.savings_rounded)),
+                                      const SizedBox(width: 10),
+                                      Expanded(child: _buildSummaryMetric('Saved', totalSaved, Icons.account_balance_wallet_rounded)),
+                                    ],
+                                  ),
+                                ],
+                              ),
                             ),
                           ),
-                        );
-                      }),
+                          const SizedBox(height: 16),
+                          Row(
+                            children: [
+                              Expanded(child: Text('My goals', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: AppTheme.text))),
+                              Text('${goals.length} goal${goals.length == 1 ? '' : 's'}', style: const TextStyle(color: AppTheme.subtitle, fontWeight: FontWeight.w600)),
+                            ],
+                          ),
+                          const SizedBox(height: 12),
+                          ...goals.map((goal) {
+                            final double targetAmount = (goal['targetAmount'] as num).toDouble();
+                            final double savedAmount = (goal['savedAmount'] as num).toDouble();
+                            final double progress = targetAmount > 0 ? (savedAmount / targetAmount).clamp(0.0, 1.0) : 0;
+                            final bool isCompleted = progress >= 1;
 
-                      const SizedBox(height: 80),
-                    ],
+                            return _buildAnimatedSection(
+                              index: goals.indexOf(goal) + 1,
+                              child: _buildGoalCard(goal, progress, isCompleted),
+                            );
+                          }),
+                          const SizedBox(height: 80),
+                        ],
+                      ),
+                    ),
                   ),
                 ),
       floatingActionButton: goals.isEmpty
           ? null
           : FloatingActionButton.extended(
               onPressed: tryCreateGoal,
-              icon: const Icon(Icons.add),
-              label: const Text('Add Goal'),
+              icon: const Icon(Icons.add_circle_rounded),
+              label: const Text('New Goal'),
+              backgroundColor: AppTheme.primary,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+              extendedPadding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
             ),
+    );
+  }
+
+  Widget _buildAnimatedSection({required int index, required Widget child}) {
+    return TweenAnimationBuilder<double>(
+      tween: Tween(begin: 0.0, end: 1.0),
+      duration: Duration(milliseconds: 550 + index * 80),
+      curve: Curves.easeOutCubic,
+      builder: (context, value, childWidget) {
+        return Opacity(
+          opacity: value,
+          child: Transform.translate(offset: Offset(0, 16 * (1 - value)), child: childWidget),
+        );
+      },
+      child: child,
+    );
+  }
+
+  Widget _buildSummaryMetric(String label, double value, IconData icon) {
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
+      decoration: BoxDecoration(color: Colors.white.withOpacity(0.16), borderRadius: BorderRadius.circular(16)),
+      child: Row(
+        children: [
+          Icon(icon, color: Colors.white, size: 16),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(label, style: const TextStyle(color: Colors.white70, fontSize: 11)),
+                const SizedBox(height: 2),
+                TweenAnimationBuilder<double>(
+                  tween: Tween(begin: 0.0, end: value),
+                  duration: const Duration(milliseconds: 800),
+                  curve: Curves.easeOutCubic,
+                  builder: (context, animatedValue, _) {
+                    return Text('₹${animatedValue.toStringAsFixed(0)}', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 13));
+                  },
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildGoalCard(Map<String, dynamic> goal, double progress, bool isCompleted) {
+    final double targetAmount = (goal['targetAmount'] as num).toDouble();
+    final double savedAmount = (goal['savedAmount'] as num).toDouble();
+    final String status = isCompleted ? 'Completed' : 'In Progress';
+    final Color statusColor = isCompleted ? AppTheme.success : AppTheme.primary;
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 14),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(28),
+        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 18, offset: const Offset(0, 8))],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(colors: [AppTheme.primary, isCompleted ? AppTheme.success : const Color(0xFF38BDF8)], begin: Alignment.topLeft, end: Alignment.bottomRight),
+                  borderRadius: BorderRadius.circular(18),
+                ),
+                child: Icon(getGoalIcon(goal['goalName'].toString()), color: Colors.white, size: 22),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(goal['goalName'].toString(), style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w800, color: AppTheme.text)),
+                    const SizedBox(height: 4),
+                    Text(isCompleted ? 'Goal completed' : '${(progress * 100).toStringAsFixed(0)}% completed', style: const TextStyle(fontSize: 13, color: AppTheme.subtitle)),
+                  ],
+                ),
+              ),
+              Container(
+                decoration: BoxDecoration(color: const Color(0xFFF8FAFC), borderRadius: BorderRadius.circular(14)),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    IconButton(
+                      onPressed: () => showGoalDialog(existingGoal: goal),
+                      tooltip: 'Edit Goal',
+                      icon: const Icon(Icons.edit_outlined, color: AppTheme.primary, size: 18),
+                      padding: EdgeInsets.zero,
+                      constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
+                    ),
+                    IconButton(
+                      onPressed: () => deleteGoal(goal),
+                      tooltip: 'Delete Goal',
+                      icon: const Icon(Icons.delete_outline_rounded, color: AppTheme.danger, size: 18),
+                      padding: EdgeInsets.zero,
+                      constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+            decoration: BoxDecoration(color: statusColor.withOpacity(0.12), borderRadius: BorderRadius.circular(999)),
+            child: Text(status, style: TextStyle(color: statusColor, fontWeight: FontWeight.w700, fontSize: 11)),
+          ),
+          const SizedBox(height: 14),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(999),
+            child: TweenAnimationBuilder<double>(
+              tween: Tween(begin: 0.0, end: progress),
+              duration: const Duration(milliseconds: 800),
+              curve: Curves.easeOutCubic,
+              builder: (context, animatedValue, _) {
+                return LinearProgressIndicator(
+                  value: animatedValue,
+                  minHeight: 10,
+                  backgroundColor: const Color(0xFFE2E8F0),
+                  valueColor: AlwaysStoppedAnimation<Color>(isCompleted ? AppTheme.success : AppTheme.primary),
+                );
+              },
+            ),
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              Expanded(child: _buildGoalMetric('Saved', savedAmount)),
+              const SizedBox(width: 8),
+              Expanded(child: _buildGoalMetric('Remaining', (targetAmount - savedAmount).clamp(0, targetAmount))),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Row(
+            children: [
+              Expanded(child: _buildGoalMetric('Target', targetAmount)),
+              const SizedBox(width: 8),
+              Expanded(child: _buildGoalMetric('Progress', progress * 100)),
+            ],
+          ),
+          const SizedBox(height: 10),
+          Text('Target date: ${goal['targetDate'] is String && (goal['targetDate'] as String).isNotEmpty ? goal['targetDate'] : 'Flexible'}', style: const TextStyle(color: AppTheme.subtitle, fontSize: 12.5)),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildGoalMetric(String label, double value) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+      decoration: BoxDecoration(color: const Color(0xFFF8FAFC), borderRadius: BorderRadius.circular(14)),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(label, style: const TextStyle(color: AppTheme.subtitle, fontSize: 10.5, fontWeight: FontWeight.w600)),
+          const SizedBox(height: 2),
+          Text(label == 'Progress' ? '${value.toStringAsFixed(0)}%' : '₹${value.toStringAsFixed(0)}', style: const TextStyle(color: AppTheme.text, fontWeight: FontWeight.w700, fontSize: 12.5)),
+        ],
+      ),
     );
   }
 }
