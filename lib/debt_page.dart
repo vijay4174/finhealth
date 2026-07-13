@@ -167,7 +167,7 @@ class _DebtPageState extends State<DebtPage> {
           ),
           const SizedBox(height: 4),
           Text(
-            'Manage loans and stay debt free',
+            'Manage loans with confidence',
             style: TextStyle(
               color: AppTheme.subtitle,
               fontSize: 13,
@@ -292,7 +292,7 @@ class _DebtPageState extends State<DebtPage> {
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
               elevation: 4,
             ),
-            child: const Text('Add First Loan', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 16)),
+            child: const Text('Add Your First Debt', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 16)),
           ),
         ),
       ],
@@ -303,12 +303,14 @@ class _DebtPageState extends State<DebtPage> {
     return ListView(
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 100),
       children: [
-        _buildAnimatedSection(index: 0, child: _buildSummaryCard()),
+          _buildAnimatedSection(index: 0, child: _buildSummaryCard()),
         const SizedBox(height: 24),
-        _buildAnimatedSection(index: 1, child: _buildInsightCard()),
+        _buildAnimatedSection(index: 1, child: _buildQuickActions()),
+        const SizedBox(height: 24),
+        _buildAnimatedSection(index: 2, child: _buildInsightCard()),
         const SizedBox(height: 24),
         _buildAnimatedSection(
-          index: 2,
+          index: 3,
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
@@ -321,7 +323,7 @@ class _DebtPageState extends State<DebtPage> {
         const SizedBox(height: 12),
         ...debts.asMap().entries.map((entry) {
           return _buildAnimatedSection(
-            index: entry.key + 3,
+            index: entry.key + 4,
             child: buildDebtCard(entry.value),
           );
         }),
@@ -330,71 +332,120 @@ class _DebtPageState extends State<DebtPage> {
   }
 
   Widget _buildSummaryCard() {
-    return Container(
-      padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(30),
-        gradient: const LinearGradient(
-          colors: [Color(0xFF0F172A), Color(0xFF1E293B), Color(0xFF334155)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        boxShadow: [
-          BoxShadow(color: const Color(0xFF0F172A).withOpacity(0.3), blurRadius: 25, offset: const Offset(0, 15)),
-        ],
-      ),
-      child: Column(
-        children: [
-          Row(
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(30),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+        child: Container(
+          padding: const EdgeInsets.all(24),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(30),
+            gradient: const LinearGradient(
+              colors: [Color(0xFF081B3A), Color(0xFF1E4ACB), Color(0xFF5A8EFF)],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+            boxShadow: [
+              BoxShadow(color: const Color(0xFF2563EB).withOpacity(0.28), blurRadius: 32, offset: const Offset(0, 18)),
+            ],
+          ),
+          child: Stack(
             children: [
-              Expanded(
+              Positioned(
+                right: -24, top: -24,
+                child: Container(
+                  width: 120, height: 120,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: Colors.white.withOpacity(0.12),
+                  ),
+                ),
+              ),
+              Positioned(
+                left: -28, bottom: -28,
+                child: Container(
+                  width: 100, height: 100,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: Colors.white.withOpacity(0.08),
+                  ),
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.all(2),
                 child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('Total Debt', style: TextStyle(color: Colors.white.withOpacity(0.7), fontSize: 13)),
-                    const SizedBox(height: 4),
-                    Text('₹${totalOriginalDebt.toStringAsFixed(0)}',
-                        style: const TextStyle(color: Colors.white, fontSize: 28, fontWeight: FontWeight.w800)),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text('Total Debt', style: TextStyle(color: Colors.white.withOpacity(0.7), fontSize: 13)),
+                              const SizedBox(height: 4),
+                              Text('₹${totalOriginalDebt.toStringAsFixed(0)}',
+                                  style: const TextStyle(color: Colors.white, fontSize: 28, fontWeight: FontWeight.w800)),
+                            ],
+                          ),
+                        ),
+                        Stack(
+                          alignment: Alignment.center,
+                          children: [
+                            SizedBox(
+                              width: 76,
+                              height: 76,
+                              child: TweenAnimationBuilder<double>(
+                                duration: const Duration(milliseconds: 900),
+                                curve: Curves.easeOutCubic,
+                                tween: Tween<double>(begin: 0, end: overallProgress),
+                                builder: (context, value, child) {
+                                  return CircularProgressIndicator(
+                                    value: value,
+                                    strokeWidth: 7,
+                                    backgroundColor: Colors.white.withOpacity(0.1),
+                                    valueColor: const AlwaysStoppedAnimation<Color>(AppTheme.success),
+                                    strokeCap: StrokeCap.round,
+                                  );
+                                },
+                              ),
+                            ),
+                            Container(
+                              width: 56, height: 56,
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                color: Colors.white.withOpacity(0.16),
+                              ),
+                              child: Center(
+                                child: Text('${(overallProgress * 100).toInt()}%',
+                                    style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 14)),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 24),
+                    Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.14),
+                        borderRadius: BorderRadius.circular(22),
+                        border: Border.all(color: Colors.white.withOpacity(0.18)),
+                      ),
+                      child: Row(
+                        children: [
+                          Expanded(child: _buildSummaryStat('Remaining', '₹${totalRemainingDebt.toStringAsFixed(0)}')),
+                          Container(width: 1, height: 30, color: Colors.white.withOpacity(0.15)),
+                          Expanded(child: _buildSummaryStat('Monthly EMI', '₹${totalMonthlyEmi.toStringAsFixed(0)}')),
+                        ],
+                      ),
+                    ),
                   ],
                 ),
               ),
-              Stack(
-                alignment: Alignment.center,
-                children: [
-                  SizedBox(
-                    width: 70,
-                    height: 70,
-                    child: CircularProgressIndicator(
-                      value: overallProgress,
-                      strokeWidth: 7,
-                      backgroundColor: Colors.white.withOpacity(0.1),
-                      valueColor: const AlwaysStoppedAnimation<Color>(AppTheme.success),
-                      strokeCap: StrokeCap.round,
-                    ),
-                  ),
-                  Text('${(overallProgress * 100).toInt()}%',
-                      style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 14)),
-                ],
-              ),
             ],
           ),
-          const SizedBox(height: 24),
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.08),
-              borderRadius: BorderRadius.circular(22),
-              border: Border.all(color: Colors.white.withOpacity(0.1)),
-            ),
-            child: Row(
-              children: [
-                Expanded(child: _buildSummaryStat('Remaining', '₹${totalRemainingDebt.toStringAsFixed(0)}')),
-                Container(width: 1, height: 30, color: Colors.white.withOpacity(0.1)),
-                Expanded(child: _buildSummaryStat('Monthly EMI', '₹${totalMonthlyEmi.toStringAsFixed(0)}')),
-              ],
-            ),
-          ),
-        ],
+        ),
       ),
     );
   }
@@ -406,6 +457,82 @@ class _DebtPageState extends State<DebtPage> {
         const SizedBox(height: 4),
         Text(value, style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w700)),
       ],
+    );
+  }
+
+  Widget _buildQuickActions() {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(28),
+        boxShadow: [
+          BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 20, offset: const Offset(0, 10)),
+        ],
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: InkWell(
+              onTap: () => tryOpenDebtForm(),
+              borderRadius: BorderRadius.circular(20),
+              child: Container(
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                decoration: BoxDecoration(
+                  color: AppTheme.primary.withOpacity(0.08),
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Column(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        color: AppTheme.primary.withOpacity(0.12),
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(Icons.add_circle_rounded, color: AppTheme.primary, size: 24),
+                    ),
+                    const SizedBox(height: 8),
+                    const Text('Add Debt',
+                        style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13, color: AppTheme.text)),
+                  ],
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: InkWell(
+              onTap: () {
+                if (debts.isNotEmpty) markEmiPaid(debts.first);
+              },
+              borderRadius: BorderRadius.circular(20),
+              child: Container(
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                decoration: BoxDecoration(
+                  color: AppTheme.success.withOpacity(0.08),
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Column(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        color: AppTheme.success.withOpacity(0.12),
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(Icons.payments_rounded, color: AppTheme.success, size: 24),
+                    ),
+                    const SizedBox(height: 8),
+                    const Text('Record EMI',
+                        style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13, color: AppTheme.text)),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -910,14 +1037,24 @@ class _DebtPageState extends State<DebtPage> {
       context: context,
       builder: (dialogContext) {
         return AlertDialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-          title: const Text('Confirm Payment', style: TextStyle(fontWeight: FontWeight.w800)),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
+          title: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(color: AppTheme.success.withOpacity(0.1), shape: BoxShape.circle),
+                child: const Icon(Icons.check_circle_rounded, color: AppTheme.success, size: 24),
+              ),
+              const SizedBox(width: 12),
+              const Text('Confirm Payment', style: TextStyle(fontWeight: FontWeight.w800)),
+            ],
+          ),
           content: Text('Mark EMI of ₹${monthlyEmi.toStringAsFixed(0)} for ${debt['loanName']} as paid?'),
           actions: [
             TextButton(onPressed: () => Navigator.pop(dialogContext, false), child: const Text('Cancel')),
             ElevatedButton(
               onPressed: () => Navigator.pop(dialogContext, true),
-              style: ElevatedButton.styleFrom(backgroundColor: AppTheme.primary, foregroundColor: Colors.white, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
+              style: ElevatedButton.styleFrom(backgroundColor: AppTheme.primary, foregroundColor: Colors.white, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14))),
               child: const Text('Mark as Paid'),
             ),
           ],
@@ -938,14 +1075,24 @@ class _DebtPageState extends State<DebtPage> {
       context: context,
       builder: (dialogContext) {
         return AlertDialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-          title: const Text('Undo Last Payment', style: TextStyle(fontWeight: FontWeight.w800)),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
+          title: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(color: Colors.orange.withOpacity(0.1), shape: BoxShape.circle),
+                child: const Icon(Icons.undo_rounded, color: Colors.orange, size: 24),
+              ),
+              const SizedBox(width: 12),
+              const Text('Undo Last Payment', style: TextStyle(fontWeight: FontWeight.w800)),
+            ],
+          ),
           content: const Text('This will restore the last EMI payment and remaining balance.'),
           actions: [
             TextButton(onPressed: () => Navigator.pop(dialogContext, false), child: const Text('Cancel')),
             ElevatedButton(
               onPressed: () => Navigator.pop(dialogContext, true),
-              style: ElevatedButton.styleFrom(backgroundColor: Colors.orange, foregroundColor: Colors.white, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
+              style: ElevatedButton.styleFrom(backgroundColor: Colors.orange, foregroundColor: Colors.white, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14))),
               child: const Text('Undo'),
             ),
           ],
@@ -1032,8 +1179,18 @@ class _DebtPageState extends State<DebtPage> {
       context: context,
       builder: (dialogContext) {
         return AlertDialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-          title: const Text('Delete Loan', style: TextStyle(fontWeight: FontWeight.w800)),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
+          title: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(color: AppTheme.danger.withOpacity(0.1), shape: BoxShape.circle),
+                child: const Icon(Icons.delete_outline_rounded, color: AppTheme.danger, size: 24),
+              ),
+              const SizedBox(width: 12),
+              const Text('Delete Loan', style: TextStyle(fontWeight: FontWeight.w800)),
+            ],
+          ),
           content: Text('Delete ${debt['loanName']} and its payment history? This cannot be undone.'),
           actions: [
             TextButton(onPressed: () => Navigator.pop(dialogContext, false), child: const Text('Cancel')),

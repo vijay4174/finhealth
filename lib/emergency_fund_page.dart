@@ -1,6 +1,8 @@
-import 'dart:ui';
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import 'app_theme.dart';
 import 'emergency_fund_service.dart';
@@ -31,6 +33,8 @@ class _EmergencyFundPageState extends State<EmergencyFundPage> {
 
   final Map<String, bool> _sectionVisible = {};
 
+  List<Map<String, dynamic>> transactions = [];
+
   @override
   void initState() {
     super.initState();
@@ -39,9 +43,10 @@ class _EmergencyFundPageState extends State<EmergencyFundPage> {
     currentFundController.addListener(refreshCalculations);
 
     loadEmergencyFund();
+    loadTransactions();
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      for (int index = 0; index < 10; index++) {
+      for (int index = 0; index < 18; index++) {
         Future.delayed(Duration(milliseconds: 100 + (index * 80)), () {
           if (!mounted) return;
           setState(() {
@@ -110,6 +115,197 @@ class _EmergencyFundPageState extends State<EmergencyFundPage> {
       hasSavedFund = data != null;
       isLoading = false;
     });
+  }
+
+  static const String _transactionsKey = 'emergency_fund_transactions';
+
+  Future<void> loadTransactions() async {
+    final prefs = await SharedPreferences.getInstance();
+    final savedTransactions = prefs.getStringList(_transactionsKey) ?? [];
+    final List<Map<String, dynamic>> decoded = [];
+    for (final item in savedTransactions) {
+      try {
+        decoded.add(Map<String, dynamic>.from(jsonDecode(item)));
+      } catch (_) {}
+    }
+    decoded.sort((a, b) {
+      final dateA = DateTime.tryParse(a['createdAt']?.toString() ?? '') ?? DateTime(2000);
+      final dateB = DateTime.tryParse(b['createdAt']?.toString() ?? '') ?? DateTime(2000);
+      return dateB.compareTo(dateA);
+    });
+    if (mounted) {
+      setState(() {
+        transactions = decoded;
+      });
+    }
+  }
+
+  Future<void> _saveTransactionList(List<Map<String, dynamic>> list) async {
+    final prefs = await SharedPreferences.getInstance();
+    final encoded = list.map((t) => jsonEncode(t)).toList();
+    await prefs.setStringList(_transactionsKey, encoded);
+  }
+
+  Future<void> addMoneyToFund() async {
+    final controller = TextEditingController();
+    final amount = await showDialog<double>(
+      context: context,
+      builder: (dialogContext) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+          title: const Text('Add Money', style: TextStyle(fontWeight: FontWeight.w800)),
+          content: TextField(
+            controller: controller,
+            keyboardType: TextInputType.number,
+            inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+            decoration: InputDecoration(
+              prefixText: '₹ ',
+              hintText: 'Enter amount',
+              filled: true,
+              fillColor: AppTheme.background,
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(16),
+                borderSide: BorderSide.none,
+              ),
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext),
+              child: const Text('Cancel'),
+            ),
+            TextButton(
+              onPressed: () {
+                final value = double.tryParse(controller.text.trim()) ?? 0;
+                if (value > 0) {
+                  Navigator.pop(dialogContext, value);
+                } else {
+                  ScaffoldMessenger.of(dialogContext).showSnackBar(
+                    const SnackBar(content: Text('Enter a valid amount')),
+                  );
+                }
+              },
+              child: const Text('Add', style: TextStyle(fontWeight: FontWeight.w800, color: AppTheme.primary)),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (amount == null || amount <= 0) return;
+
+    try {
+      await EmergencyFundService.addMoneyToEmergencyFund(amount: amount);
+      final data = await EmergencyFundService.getEmergencyFund();
+      if (data != null) {
+        currentFundController.text = (data['currentFund'] as num?)?.toDouble().toStringAsFixed(0) ?? currentFundController.text;
+      }
+      final txn = <String, dynamic>{
+        'type': 'deposit',
+        'amount': amount,
+        'createdAt': DateTime.now().toIso8601String(),
+        'note': 'Added to emergency fund',
+      };
+      transactions.insert(0, txn);
+      await _saveTransactionList(transactions);
+      if (mounted) setState(() {});
+      _showSnackBar('₹${amount.toStringAsFixed(0)} added to emergency fund');
+    } catch (e) {
+      _showSnackBar(e.toString().replaceFirst('StateError: ', ''));
+    }
+  }
+
+  Future<void> withdrawFromFund() async {
+    final controller = TextEditingController();
+    final amount = await showDialog<double>(
+      context: context,
+      builder: (dialogContext) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+          title: const Text('Withdraw Money', style: TextStyle(fontWeight: FontWeight.w800)),
+          content: TextField(
+            controller: controller,
+            keyboardType: TextInputType.number,
+            inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+            decoration: InputDecoration(
+              prefixText: '₹ ',
+              hintText: 'Enter amount',
+              filled: true,
+              fillColor: AppTheme.background,
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(16),
+                borderSide: BorderSide.none,
+              ),
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext),
+              child: const Text('Cancel'),
+            ),
+            TextButton(
+              onPressed: () {
+                final value = double.tryParse(controller.text.trim()) ?? 0;
+                if (value > 0 && value <= currentFund) {
+                  Navigator.pop(dialogContext, value);
+                } else if (value > currentFund) {
+                  ScaffoldMessenger.of(dialogContext).showSnackBar(
+                    const SnackBar(content: Text('Insufficient balance')),
+                  );
+                } else {
+                  ScaffoldMessenger.of(dialogContext).showSnackBar(
+                    const SnackBar(content: Text('Enter a valid amount')),
+                  );
+                }
+              },
+              child: const Text('Withdraw', style: TextStyle(fontWeight: FontWeight.w800, color: AppTheme.danger)),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (amount == null || amount <= 0) return;
+
+    try {
+      final newFund = currentFund - amount;
+      await EmergencyFundService.saveEmergencyFund(
+        monthlyEssentialExpenses: monthlyEssentialExpenses,
+        targetMonths: selectedTargetMonths,
+        currentFund: newFund,
+      );
+      currentFundController.text = newFund.toStringAsFixed(0);
+      final txn = <String, dynamic>{
+        'type': 'withdraw',
+        'amount': amount,
+        'createdAt': DateTime.now().toIso8601String(),
+        'note': 'Withdrawn from emergency fund',
+      };
+      transactions.insert(0, txn);
+      await _saveTransactionList(transactions);
+      if (mounted) setState(() {});
+      _showSnackBar('₹${amount.toStringAsFixed(0)} withdrawn from emergency fund');
+    } catch (e) {
+      _showSnackBar(e.toString().replaceFirst('StateError: ', ''));
+    }
+  }
+
+  String _formatTransactionDate(String? isoDate) {
+    if (isoDate == null) return '';
+    final dt = DateTime.tryParse(isoDate);
+    if (dt == null) return '';
+    final months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    return '${dt.day} ${months[dt.month - 1]} ${dt.year}';
+  }
+
+  String _formatTransactionTime(String? isoDate) {
+    if (isoDate == null) return '';
+    final dt = DateTime.tryParse(isoDate);
+    if (dt == null) return '';
+    final hour = dt.hour > 12 ? dt.hour - 12 : (dt.hour == 0 ? 12 : dt.hour);
+    final min = dt.minute.toString().padLeft(2, '0');
+    final ampm = dt.hour >= 12 ? 'PM' : 'AM';
+    return '$hour:$min $ampm';
   }
 
   Future<void> saveEmergencyFund() async {
@@ -274,14 +470,73 @@ class _EmergencyFundPageState extends State<EmergencyFundPage> {
             const Text('Emergency Fund',
                 style: TextStyle(fontSize: 22, fontWeight: FontWeight.w800, color: AppTheme.text)),
             const SizedBox(height: 4),
-            Text('Build your financial safety net',
+            Text('Be prepared for life\'s surprises',
                 style: TextStyle(fontSize: 13, color: AppTheme.subtitle, fontWeight: FontWeight.w500)),
           ],
         ),
         actions: [
+          Padding(
+            padding: const EdgeInsets.only(right: 8),
+            child: Stack(
+              children: [
+                Container(
+                  width: 44,
+                  height: 44,
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    shape: BoxShape.circle,
+                    boxShadow: [
+                      BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 12, offset: const Offset(0, 6)),
+                    ],
+                  ),
+                  child: const Icon(Icons.notifications_none_rounded, color: AppTheme.primary),
+                ),
+                Positioned(
+                  right: 6,
+                  top: 6,
+                  child: Container(
+                    width: 10,
+                    height: 10,
+                    decoration: const BoxDecoration(
+                      color: AppTheme.danger,
+                      shape: BoxShape.circle,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.only(right: 4),
+            child: Container(
+              width: 44,
+              height: 44,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                gradient: const LinearGradient(
+                  colors: [Color(0xFF2563EB), Color(0xFF5B8CFF)],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: AppTheme.primary.withOpacity(0.18),
+                    blurRadius: 12,
+                    offset: const Offset(0, 6),
+                  ),
+                ],
+              ),
+              child: const Center(
+                child: Text(
+                  'V',
+                  style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 20),
+                ),
+              ),
+            ),
+          ),
           if (hasSavedFund)
             Padding(
-              padding: const EdgeInsets.only(right: 8),
+              padding: const EdgeInsets.only(right: 4),
               child: IconButton(
                 onPressed: clearEmergencyFund,
                 icon: Container(
@@ -343,6 +598,33 @@ class _EmergencyFundPageState extends State<EmergencyFundPage> {
                         index: 6,
                         child: _buildActionButtons(),
                       ),
+                      const SizedBox(height: 24),
+                      _buildAnimatedSection(
+                        index: 7,
+                        child: _buildQuickActionsSection(),
+                      ),
+                      const SizedBox(height: 24),
+                      _buildAnimatedSection(
+                        index: 8,
+                        child: _buildSectionHeader('Transaction History', 'Record of fund movements'),
+                      ),
+                      const SizedBox(height: 12),
+                      if (transactions.isEmpty)
+                        _buildAnimatedSection(
+                          index: 9,
+                          child: _buildEmptyTransactions(),
+                        )
+                      else
+                        ...transactions.asMap().entries.map((entry) {
+                          return Padding(
+                            padding: const EdgeInsets.only(bottom: 12),
+                            child: _buildAnimatedSection(
+                              index: entry.key + 9,
+                              child: _buildTransactionCard(entry.value),
+                            ),
+                          );
+                        }),
+                      const SizedBox(height: 24),
                     ],
                   ),
                 ),
@@ -601,6 +883,223 @@ class _EmergencyFundPageState extends State<EmergencyFundPage> {
                     fontWeight: FontWeight.w600,
                     height: 1.4,
                   ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildQuickActionsSection() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _buildSectionHeader('Quick Actions', 'Manage your emergency fund'),
+        const SizedBox(height: 16),
+        Row(
+          children: [
+            Expanded(
+              child: GestureDetector(
+                onTap: addMoneyToFund,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(vertical: 20),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(28),
+                    boxShadow: [
+                      BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 20, offset: const Offset(0, 10)),
+                    ],
+                  ),
+                  child: Column(
+                    children: [
+                      Container(
+                        width: 52,
+                        height: 52,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          gradient: const LinearGradient(
+                            colors: [Color(0xFF2563EB), Color(0xFF5B8CFF)],
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                          ),
+                          boxShadow: [
+                            BoxShadow(
+                              color: AppTheme.primary.withOpacity(0.2),
+                              blurRadius: 12,
+                              offset: const Offset(0, 6),
+                            ),
+                          ],
+                        ),
+                        child: const Icon(Icons.add_rounded, color: Colors.white, size: 28),
+                      ),
+                      const SizedBox(height: 12),
+                      const Text(
+                        'Add Money',
+                        style: TextStyle(fontSize: 14, fontWeight: FontWeight.w800, color: AppTheme.text),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: GestureDetector(
+                onTap: withdrawFromFund,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(vertical: 20),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(28),
+                    boxShadow: [
+                      BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 20, offset: const Offset(0, 10)),
+                    ],
+                  ),
+                  child: Column(
+                    children: [
+                      Container(
+                        width: 52,
+                        height: 52,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: AppTheme.danger.withOpacity(0.10),
+                        ),
+                        child: Icon(Icons.remove_rounded, color: AppTheme.danger, size: 28),
+                      ),
+                      const SizedBox(height: 12),
+                      const Text(
+                        'Withdraw',
+                        style: TextStyle(fontSize: 14, fontWeight: FontWeight.w800, color: AppTheme.text),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _buildEmptyTransactions() {
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 48, horizontal: 24),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(28),
+        boxShadow: [
+          BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 20, offset: const Offset(0, 10)),
+        ],
+      ),
+      child: Column(
+        children: [
+          Container(
+            width: 72,
+            height: 72,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: AppTheme.primary.withOpacity(0.08),
+            ),
+            child: const Icon(Icons.account_balance_wallet_outlined, color: AppTheme.primary, size: 36),
+          ),
+          const SizedBox(height: 20),
+          const Text(
+            'No transactions yet',
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: AppTheme.text),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Start building your emergency fund by adding your first deposit.',
+            textAlign: TextAlign.center,
+            style: TextStyle(fontSize: 13, color: AppTheme.subtitle.withOpacity(0.8), height: 1.4),
+          ),
+          const SizedBox(height: 20),
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton.icon(
+              onPressed: addMoneyToFund,
+              icon: const Icon(Icons.add_rounded, size: 20),
+              label: const Text('Add First Deposit'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppTheme.primary,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                elevation: 4,
+                shadowColor: AppTheme.primary.withOpacity(0.4),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTransactionCard(Map<String, dynamic> txn) {
+    final type = txn['type']?.toString() ?? 'deposit';
+    final amount = (txn['amount'] as num?)?.toDouble() ?? 0;
+    final isDeposit = type == 'deposit';
+    final color = isDeposit ? AppTheme.success : AppTheme.danger;
+    final icon = isDeposit ? Icons.add_circle_outline_rounded : Icons.remove_circle_outline_rounded;
+    final label = isDeposit ? 'Deposit' : 'Withdraw';
+    final note = txn['note']?.toString() ?? '';
+    final date = _formatTransactionDate(txn['createdAt']?.toString());
+    final time = _formatTransactionTime(txn['createdAt']?.toString());
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(28),
+        boxShadow: [
+          BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 16, offset: const Offset(0, 8)),
+        ],
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 48,
+            height: 48,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: color.withOpacity(0.10),
+            ),
+            child: Icon(icon, color: color, size: 26),
+          ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(label,
+                        style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 15, color: AppTheme.text)),
+                    Text('₹${amount.toStringAsFixed(0)}',
+                        style: TextStyle(fontWeight: FontWeight.w800, fontSize: 15, color: color)),
+                  ],
+                ),
+                const SizedBox(height: 4),
+                if (note.isNotEmpty) ...[
+                  Text(note,
+                      style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppTheme.subtitle)),
+                  const SizedBox(height: 2),
+                ],
+                Row(
+                  children: [
+                    Text(date,
+                        style: TextStyle(fontSize: 11, color: AppTheme.subtitle.withOpacity(0.7))),
+                    if (time.isNotEmpty) ...[
+                      Text(' at ',
+                          style: TextStyle(fontSize: 11, color: AppTheme.subtitle.withOpacity(0.7))),
+                      Text(time,
+                          style: TextStyle(fontSize: 11, color: AppTheme.subtitle.withOpacity(0.7))),
+                    ],
+                  ],
                 ),
               ],
             ),

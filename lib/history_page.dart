@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:ui';
 
 import 'package:flutter/material.dart';
 
@@ -324,9 +325,9 @@ class _HistoryPageState extends State<HistoryPage> with SingleTickerProviderStat
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text('Assessment History', style: TextStyle(color: AppTheme.text, fontSize: 22, fontWeight: FontWeight.w800)),
+              const Text('History', style: TextStyle(color: AppTheme.text, fontSize: 24, fontWeight: FontWeight.w800, letterSpacing: -0.5)),
               const SizedBox(height: 2),
-              Text('Your financial journey', style: TextStyle(color: AppTheme.subtitle, fontSize: 13)),
+              Text('Track your financial journey', style: TextStyle(color: AppTheme.subtitle, fontSize: 13)),
             ],
           ),
         ),
@@ -336,21 +337,26 @@ class _HistoryPageState extends State<HistoryPage> with SingleTickerProviderStat
             width: 42,
             height: 42,
             decoration: BoxDecoration(
-              gradient: const LinearGradient(colors: [AppTheme.primary, AppTheme.warning]),
+              color: Colors.white,
               borderRadius: BorderRadius.circular(14),
-              boxShadow: [BoxShadow(color: AppTheme.primary.withOpacity(0.16), blurRadius: 12, offset: const Offset(0, 6))],
+              boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.06), blurRadius: 12, offset: const Offset(0, 6))],
             ),
-            child: const Center(child: Icon(Icons.notifications_none_rounded, color: Colors.white, size: 22)),
+            child: const Center(child: Icon(Icons.notifications_none_rounded, color: AppTheme.primary, size: 22)),
           ),
           Container(
             margin: const EdgeInsets.only(right: 16),
             width: 42,
             height: 42,
             decoration: BoxDecoration(
-              color: const Color(0xFF1D4ED8),
+              gradient: const LinearGradient(
+                colors: [Color(0xFF2563EB), Color(0xFF5B8CFF)],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
               borderRadius: BorderRadius.circular(14),
+              boxShadow: [BoxShadow(color: AppTheme.primary.withOpacity(0.18), blurRadius: 12, offset: const Offset(0, 6))],
             ),
-            child: const Center(child: Text('A', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700))),
+            child: const Center(child: Text('A', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 18))),
           ),
         ],
       ),
@@ -361,34 +367,42 @@ class _HistoryPageState extends State<HistoryPage> with SingleTickerProviderStat
                   child: ConstrainedBox(
                     constraints: const BoxConstraints(maxWidth: 420),
                     child: Padding(
-                      padding: const EdgeInsets.all(24),
+                      padding: const EdgeInsets.all(32),
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           Container(
-                            padding: const EdgeInsets.all(18),
+                            padding: const EdgeInsets.all(24),
                             decoration: BoxDecoration(
                               color: Colors.white,
-                              borderRadius: BorderRadius.circular(24),
-                              boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 16, offset: const Offset(0, 8))],
+                              borderRadius: BorderRadius.circular(32),
+                              boxShadow: [
+                                BoxShadow(color: Colors.black.withOpacity(0.06), blurRadius: 24, offset: const Offset(0, 12)),
+                                BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 8, offset: const Offset(0, 4)),
+                              ],
                             ),
-                            child: const Icon(Icons.history_edu_rounded, size: 64, color: AppTheme.primary),
+                            child: const Icon(Icons.analytics_outlined, size: 72, color: AppTheme.primary),
                           ),
-                          const SizedBox(height: 20),
-                          const Text('No history available', style: TextStyle(fontSize: 24, fontWeight: FontWeight.w800, color: AppTheme.text)),
-                          const SizedBox(height: 8),
-                          const Text('Complete an assessment to build your financial history.', textAlign: TextAlign.center, style: TextStyle(color: AppTheme.subtitle, height: 1.4)),
-                          const SizedBox(height: 16),
+                          const SizedBox(height: 24),
+                          const Text('No assessment history yet', style: TextStyle(fontSize: 26, fontWeight: FontWeight.w800, color: AppTheme.text, letterSpacing: -0.5)),
+                          const SizedBox(height: 10),
+                          const Text(
+                            'Complete a financial assessment to start tracking your journey and unlock personalized insights.',
+                            textAlign: TextAlign.center,
+                            style: TextStyle(color: AppTheme.subtitle, height: 1.5, fontSize: 14),
+                          ),
+                          const SizedBox(height: 24),
                           ElevatedButton.icon(
                             onPressed: loadHistory,
                             style: ElevatedButton.styleFrom(
                               backgroundColor: AppTheme.primary,
                               foregroundColor: Colors.white,
-                              padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                              padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 16),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+                              elevation: 0,
                             ),
-                            icon: const Icon(Icons.refresh_rounded),
-                            label: const Text('Refresh History'),
+                            icon: const Icon(Icons.add_rounded, size: 20),
+                            label: const Text('Create Your First Assessment', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 15)),
                           ),
                         ],
                       ),
@@ -409,68 +423,225 @@ class _HistoryPageState extends State<HistoryPage> with SingleTickerProviderStat
                               _buildAnimatedSection(
                                 index: 0,
                                 child: Container(
-                                  padding: const EdgeInsets.all(18),
+                                  padding: const EdgeInsets.fromLTRB(20, 22, 20, 20),
                                   decoration: BoxDecoration(
-                                    gradient: const LinearGradient(colors: [Color(0xFF0F172A), Color(0xFF111827)], begin: Alignment.topLeft, end: Alignment.bottomRight),
-                                    borderRadius: BorderRadius.circular(28),
-                                    boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.08), blurRadius: 22, offset: const Offset(0, 10))],
+                                    gradient: const LinearGradient(
+                                      colors: [Color(0xFF081B3A), Color(0xFF1E4ACB), Color(0xFF5A8EFF)],
+                                      begin: Alignment.topLeft,
+                                      end: Alignment.bottomRight,
+                                    ),
+                                    borderRadius: BorderRadius.circular(30),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: const Color(0xFF2563EB).withOpacity(0.28),
+                                        blurRadius: 32,
+                                        offset: const Offset(0, 18),
+                                      ),
+                                    ],
                                   ),
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                  child: Stack(
                                     children: [
-                                      Row(
-                                        children: [
-                                          Container(
-                                            padding: const EdgeInsets.all(10),
-                                            decoration: BoxDecoration(color: Colors.white.withOpacity(0.12), borderRadius: BorderRadius.circular(14)),
-                                            child: const Icon(Icons.emoji_events_rounded, color: Color(0xFFFBBF24), size: 22),
+                                      Positioned(
+                                        right: -24,
+                                        top: -24,
+                                        child: Container(
+                                          width: 120,
+                                          height: 120,
+                                          decoration: BoxDecoration(
+                                            shape: BoxShape.circle,
+                                            color: Colors.white.withOpacity(0.12),
                                           ),
-                                          const SizedBox(width: 12),
-                                          Expanded(
-                                            child: Column(
-                                              crossAxisAlignment: CrossAxisAlignment.start,
+                                        ),
+                                      ),
+                                      Positioned(
+                                        left: -28,
+                                        bottom: -28,
+                                        child: Container(
+                                          width: 100,
+                                          height: 100,
+                                          decoration: BoxDecoration(
+                                            shape: BoxShape.circle,
+                                            color: Colors.white.withOpacity(0.08),
+                                          ),
+                                        ),
+                                      ),
+                                      Padding(
+                                        padding: const EdgeInsets.all(2),
+                                        child: Column(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          children: [
+                                            Row(
                                               children: [
-                                                const Text('Best financial score', style: TextStyle(color: Colors.white70, fontSize: 12.5)),
-                                                const SizedBox(height: 4),
-                                                Text('${getBestScore()}/100', style: const TextStyle(color: Colors.white, fontSize: 30, fontWeight: FontWeight.w800)),
+                                                ClipRRect(
+                                                  borderRadius: BorderRadius.circular(999),
+                                                  child: BackdropFilter(
+                                                    filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+                                                    child: Container(
+                                                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+                                                      decoration: BoxDecoration(
+                                                        color: Colors.white.withOpacity(0.16),
+                                                        borderRadius: BorderRadius.circular(999),
+                                                        border: Border.all(color: Colors.white.withOpacity(0.16)),
+                                                      ),
+                                                      child: const Text(
+                                                        'Financial Overview',
+                                                        style: TextStyle(
+                                                          color: Colors.white,
+                                                          fontWeight: FontWeight.w700,
+                                                          fontSize: 13,
+                                                        ),
+                                                      ),
+                                                    ),
+                                                  ),
+                                                ),
+                                                const Spacer(),
+                                                Icon(Icons.auto_awesome_rounded, color: Colors.white.withOpacity(0.95)),
                                               ],
                                             ),
-                                          ),
-                                        ],
-                                      ),
-                                      const SizedBox(height: 16),
-                                      Row(
-                                        children: [
-                                          Expanded(
-                                            child: Container(
-                                              padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
-                                              decoration: BoxDecoration(color: Colors.white.withOpacity(0.08), borderRadius: BorderRadius.circular(16)),
-                                              child: Column(
-                                                crossAxisAlignment: CrossAxisAlignment.start,
-                                                children: [
-                                                  const Text('Status', style: TextStyle(color: Colors.white70, fontSize: 11)),
-                                                  const SizedBox(height: 2),
-                                                  Text(getBestStatus(), style: TextStyle(color: getStatusColor(getBestStatus()), fontWeight: FontWeight.w800, fontSize: 15)),
-                                                ],
+                                            const SizedBox(height: 20),
+                                            ClipRRect(
+                                              borderRadius: BorderRadius.circular(26),
+                                              child: BackdropFilter(
+                                                filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                                                child: Container(
+                                                  padding: const EdgeInsets.all(16),
+                                                  decoration: BoxDecoration(
+                                                    color: Colors.white.withOpacity(0.14),
+                                                    borderRadius: BorderRadius.circular(26),
+                                                    border: Border.all(color: Colors.white.withOpacity(0.18)),
+                                                  ),
+                                                  child: Row(
+                                                    children: [
+                                                      Stack(
+                                                        alignment: Alignment.center,
+                                                        children: [
+                                                          SizedBox(
+                                                            width: 96,
+                                                            height: 96,
+                                                            child: TweenAnimationBuilder<double>(
+                                                              duration: const Duration(milliseconds: 900),
+                                                              curve: Curves.easeOutCubic,
+                                                              tween: Tween<double>(begin: 0, end: visibleHistoryData.isEmpty ? 0.0 : (getBestScore() / 100).clamp(0.0, 1.0)),
+                                                              builder: (context, value, child) {
+                                                                return CircularProgressIndicator(
+                                                                  value: value,
+                                                                  strokeWidth: 8,
+                                                                  backgroundColor: Colors.white24,
+                                                                  valueColor: AlwaysStoppedAnimation<Color>(getStatusColor(getBestStatus())),
+                                                                );
+                                                              },
+                                                            ),
+                                                          ),
+                                                          Container(
+                                                            width: 72,
+                                                            height: 72,
+                                                            decoration: BoxDecoration(
+                                                              shape: BoxShape.circle,
+                                                              color: Colors.white.withOpacity(0.16),
+                                                            ),
+                                                            child: Center(
+                                                              child: TweenAnimationBuilder<double>(
+                                                                duration: const Duration(milliseconds: 800),
+                                                                curve: Curves.easeOutCubic,
+                                                                tween: Tween<double>(begin: 0, end: getBestScore().toDouble()),
+                                                                builder: (context, value, child) {
+                                                                  return Text(
+                                                                    value.toStringAsFixed(0),
+                                                                    style: const TextStyle(
+                                                                      color: Colors.white,
+                                                                      fontSize: 28,
+                                                                      fontWeight: FontWeight.w800,
+                                                                    ),
+                                                                  );
+                                                                },
+                                                              ),
+                                                            ),
+                                                          ),
+                                                        ],
+                                                      ),
+                                                      const SizedBox(width: 16),
+                                                      Expanded(
+                                                        child: Column(
+                                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                                          children: [
+                                                            const Text('Best Score', style: TextStyle(color: Colors.white70, fontSize: 12)),
+                                                            const SizedBox(height: 4),
+                                                            Text(getBestStatus(), style: TextStyle(color: getStatusColor(getBestStatus()), fontWeight: FontWeight.w800, fontSize: 18)),
+                                                            const SizedBox(height: 8),
+                                                            Row(
+                                                              children: [
+                                                                Icon(Icons.calendar_today_rounded, size: 12, color: Colors.white.withOpacity(0.6)),
+                                                                const SizedBox(width: 4),
+                                                                Text(
+                                                                  visibleHistoryData.isNotEmpty
+                                                                      ? DateTime.parse(visibleHistoryData.first['date'].toString()).day.toString() +
+                                                                          '/' +
+                                                                          DateTime.parse(visibleHistoryData.first['date'].toString()).month.toString() +
+                                                                          '/' +
+                                                                          DateTime.parse(visibleHistoryData.first['date'].toString()).year.toString()
+                                                                      : 'N/A',
+                                                                  style: TextStyle(color: Colors.white.withOpacity(0.6), fontSize: 11),
+                                                                ),
+                                                              ],
+                                                            ),
+                                                          ],
+                                                        ),
+                                                      ),
+                                                    ],
+                                                  ),
+                                                ),
                                               ),
                                             ),
-                                          ),
-                                          const SizedBox(width: 8),
-                                          Expanded(
-                                            child: Container(
-                                              padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
-                                              decoration: BoxDecoration(color: Colors.white.withOpacity(0.08), borderRadius: BorderRadius.circular(16)),
-                                              child: Column(
-                                                crossAxisAlignment: CrossAxisAlignment.start,
-                                                children: [
-                                                  const Text('Reports', style: TextStyle(color: Colors.white70, fontSize: 11)),
-                                                  const SizedBox(height: 2),
-                                                  Text('${visibleHistoryData.length}', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 15)),
-                                                ],
-                                              ),
+                                            const SizedBox(height: 14),
+                                            Row(
+                                              children: [
+                                                Expanded(
+                                                  child: Container(
+                                                    padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
+                                                    decoration: BoxDecoration(color: Colors.white.withOpacity(0.08), borderRadius: BorderRadius.circular(16)),
+                                                    child: Column(
+                                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                                      children: [
+                                                        const Text('Total Reports', style: TextStyle(color: Colors.white70, fontSize: 11)),
+                                                        const SizedBox(height: 2),
+                                                        TweenAnimationBuilder<double>(
+                                                          duration: const Duration(milliseconds: 800),
+                                                          curve: Curves.easeOutCubic,
+                                                          tween: Tween<double>(begin: 0, end: visibleHistoryData.length.toDouble()),
+                                                          builder: (context, value, child) {
+                                                            return Text(value.toStringAsFixed(0), style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 15));
+                                                          },
+                                                        ),
+                                                      ],
+                                                    ),
+                                                  ),
+                                                ),
+                                                const SizedBox(width: 8),
+                                                Expanded(
+                                                  child: Container(
+                                                    padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
+                                                    decoration: BoxDecoration(color: Colors.white.withOpacity(0.08), borderRadius: BorderRadius.circular(16)),
+                                                    child: Column(
+                                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                                      children: [
+                                                        const Text('Avg Score', style: TextStyle(color: Colors.white70, fontSize: 11)),
+                                                        const SizedBox(height: 2),
+                                                        TweenAnimationBuilder<double>(
+                                                          duration: const Duration(milliseconds: 800),
+                                                          curve: Curves.easeOutCubic,
+                                                          tween: Tween<double>(begin: 0, end: _averageScore()),
+                                                          builder: (context, value, child) {
+                                                            return Text(value.toStringAsFixed(0), style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 15));
+                                                          },
+                                                        ),
+                                                      ],
+                                                    ),
+                                                  ),
+                                                ),
+                                              ],
                                             ),
-                                          ),
-                                        ],
+                                          ],
+                                        ),
                                       ),
                                     ],
                                   ),
@@ -481,8 +652,11 @@ class _HistoryPageState extends State<HistoryPage> with SingleTickerProviderStat
                                 padding: const EdgeInsets.all(14),
                                 decoration: BoxDecoration(
                                   color: Colors.white,
-                                  borderRadius: BorderRadius.circular(24),
-                                  boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 16, offset: const Offset(0, 8))],
+                                  borderRadius: BorderRadius.circular(28),
+                                  boxShadow: [
+                                    BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 20, offset: const Offset(0, 8)),
+                                    BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 8, offset: const Offset(0, 2)),
+                                  ],
                                 ),
                                 child: Column(
                                   children: [
@@ -494,17 +668,18 @@ class _HistoryPageState extends State<HistoryPage> with SingleTickerProviderStat
                                       },
                                       decoration: InputDecoration(
                                         hintText: 'Search assessments',
-                                        hintStyle: const TextStyle(color: AppTheme.subtitle),
-                                        prefixIcon: const Icon(Icons.search_rounded, color: AppTheme.primary),
+                                        hintStyle: const TextStyle(color: AppTheme.subtitle, fontWeight: FontWeight.w500),
+                                        prefixIcon: const Icon(Icons.search_rounded, color: AppTheme.primary, size: 22),
                                         filled: true,
                                         fillColor: const Color(0xFFF8FAFC),
-                                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide.none),
-                                        contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(18), borderSide: BorderSide.none),
+                                        contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
                                       ),
+                                      style: const TextStyle(fontSize: 14.5),
                                     ),
-                                    const SizedBox(height: 10),
+                                    const SizedBox(height: 12),
                                     SizedBox(
-                                      height: 40,
+                                      height: 36,
                                       child: ListView(
                                         scrollDirection: Axis.horizontal,
                                         children: ['All', 'Excellent', 'Good', 'Average', 'Weak']
@@ -534,32 +709,88 @@ class _HistoryPageState extends State<HistoryPage> with SingleTickerProviderStat
                                   Expanded(child: _buildStatCard('Lowest Score', _lowestScore().toDouble(), Icons.trending_down_rounded)),
                                 ],
                               ),
+                              _buildAnimatedSection(
+                                index: 1,
+                                child: Container(
+                                  padding: const EdgeInsets.all(16),
+                                  decoration: BoxDecoration(
+                                    gradient: const LinearGradient(
+                                      colors: [Color(0xFF1E4ACB), Color(0xFF5A8EFF)],
+                                      begin: Alignment.topLeft,
+                                      end: Alignment.bottomRight,
+                                    ),
+                                    borderRadius: BorderRadius.circular(28),
+                                    boxShadow: [
+                                      BoxShadow(color: const Color(0xFF2563EB).withOpacity(0.22), blurRadius: 24, offset: const Offset(0, 12)),
+                                    ],
+                                  ),
+                                  child: Row(
+                                    children: [
+                                      Container(
+                                        padding: const EdgeInsets.all(10),
+                                        decoration: BoxDecoration(color: Colors.white.withOpacity(0.18), borderRadius: BorderRadius.circular(14)),
+                                        child: const Icon(Icons.lightbulb_outline_rounded, color: Colors.white, size: 24),
+                                      ),
+                                      const SizedBox(width: 14),
+                                      Expanded(
+                                        child: Column(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          children: [
+                                            const Text('Insights', style: TextStyle(color: Colors.white70, fontSize: 11, fontWeight: FontWeight.w600)),
+                                            const SizedBox(height: 4),
+                                            Text(
+                                              visibleHistoryData.length >= 2
+                                                  ? 'Your average financial score has improved by ${((_averageScore() / getBestScore()) * 100).toStringAsFixed(0)}%.'
+                                                  : visibleHistoryData.length == 1
+                                                      ? 'You completed ${visibleHistoryData.length} financial assessment.'
+                                                      : 'Keep maintaining your monthly savings habit.',
+                                              style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w600, height: 1.4),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
                               const SizedBox(height: 16),
                               Row(
                                 children: [
                                   Expanded(
-                                    child: Text('Previous reports', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: AppTheme.text)),
+                                    child: Text('Previous reports', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: AppTheme.text, letterSpacing: -0.3)),
                                   ),
                                   if (historyData.isNotEmpty)
-                                    IconButton(
-                                      onPressed: clearHistory,
-                                      tooltip: 'Clear All History',
-                                      icon: const Icon(Icons.delete_sweep_rounded, color: AppTheme.danger),
+                                    Container(
+                                      decoration: BoxDecoration(
+                                        color: AppTheme.danger.withOpacity(0.1),
+                                        borderRadius: BorderRadius.circular(12),
+                                      ),
+                                      child: IconButton(
+                                        onPressed: clearHistory,
+                                        tooltip: 'Clear All History',
+                                        icon: const Icon(Icons.delete_sweep_rounded, color: AppTheme.danger, size: 20),
+                                      ),
                                     ),
                                 ],
                               ),
                               const SizedBox(height: 10),
                               if (filteredHistoryData.isEmpty)
                                 _buildAnimatedSection(
-                                  index: 1,
+                                  index: 2,
                                   child: Container(
-                                    padding: const EdgeInsets.all(18),
+                                    padding: const EdgeInsets.all(20),
                                     decoration: BoxDecoration(
                                       color: Colors.white,
                                       borderRadius: BorderRadius.circular(24),
                                       boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 16, offset: const Offset(0, 8))],
                                     ),
-                                    child: const Text('No assessments match your search.', style: TextStyle(color: AppTheme.subtitle, fontWeight: FontWeight.w600)),
+                                    child: Row(
+                                      children: [
+                                        Icon(Icons.search_off_rounded, color: AppTheme.subtitle.withOpacity(0.5), size: 20),
+                                        const SizedBox(width: 10),
+                                        const Text('No assessments match your search.', style: TextStyle(color: AppTheme.subtitle, fontWeight: FontWeight.w600, fontSize: 14)),
+                                      ],
+                                    ),
                                   ),
                                 )
                               else
@@ -567,41 +798,153 @@ class _HistoryPageState extends State<HistoryPage> with SingleTickerProviderStat
                                 final date = DateTime.parse(item['date'].toString());
                                 final formattedDate = '${date.day}/${date.month}/${date.year}';
                                 final status = item['status'].toString();
+                                final score = (item['score'] as num).toInt();
+                                final scoreProgress = (score / 100).clamp(0.0, 1.0);
 
                                 return _buildAnimatedSection(
-                                  index: 1,
+                                  index: 2,
                                   child: Container(
                                     margin: const EdgeInsets.only(bottom: 12),
-                                    padding: const EdgeInsets.all(14),
+                                    padding: const EdgeInsets.all(16),
                                     decoration: BoxDecoration(
                                       color: Colors.white,
-                                      borderRadius: BorderRadius.circular(24),
-                                      boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 16, offset: const Offset(0, 8))],
+                                      borderRadius: BorderRadius.circular(28),
+                                      boxShadow: [
+                                        BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 20, offset: const Offset(0, 8)),
+                                        BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 8, offset: const Offset(0, 2)),
+                                      ],
                                     ),
                                     child: Column(
                                       crossAxisAlignment: CrossAxisAlignment.start,
                                       children: [
                                         Row(
                                           children: [
-                                            _buildScoreBadge((item['score'] as num).toInt()),
-                                            const SizedBox(width: 8),
+                                            _buildScoreBadge(score),
+                                            const SizedBox(width: 10),
                                             Expanded(
-                                              child: Text(formattedDate, style: const TextStyle(color: AppTheme.text, fontWeight: FontWeight.w700, fontSize: 13)),
+                                              child: Column(
+                                                crossAxisAlignment: CrossAxisAlignment.start,
+                                                children: [
+                                                  Text(formattedDate, style: const TextStyle(color: AppTheme.text, fontWeight: FontWeight.w700, fontSize: 14)),
+                                                  const SizedBox(height: 2),
+                                                  Text('Financial Assessment', style: TextStyle(color: AppTheme.subtitle, fontSize: 11.5)),
+                                                ],
+                                              ),
                                             ),
-                                            IconButton(
-                                              onPressed: () => deleteSingleHistory(item),
-                                              tooltip: 'Delete Report',
-                                              icon: const Icon(Icons.delete_outline_rounded, color: AppTheme.danger),
+                                            PopupMenuButton<String>(
+                                              onSelected: (value) {
+                                                if (value == 'view') {
+                                                  _showReportDetails(context, item);
+                                                } else if (value == 'delete') {
+                                                  deleteSingleHistory(item);
+                                                }
+                                              },
+                                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+                                              elevation: 4,
+                                              color: Colors.white,
+                                              offset: const Offset(0, 4),
+                                              itemBuilder: (context) => [
+                                                PopupMenuItem(
+                                                  value: 'view',
+                                                  child: Row(
+                                                    children: [
+                                                      Container(
+                                                        padding: const EdgeInsets.all(6),
+                                                        decoration: BoxDecoration(color: AppTheme.primary.withOpacity(0.1), borderRadius: BorderRadius.circular(8)),
+                                                        child: const Icon(Icons.visibility_rounded, size: 16, color: AppTheme.primary),
+                                                      ),
+                                                      const SizedBox(width: 10),
+                                                      const Text('View Report', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
+                                                    ],
+                                                  ),
+                                                ),
+                                                PopupMenuItem(
+                                                  value: 'share',
+                                                  child: Row(
+                                                    children: [
+                                                      Container(
+                                                        padding: const EdgeInsets.all(6),
+                                                        decoration: BoxDecoration(color: AppTheme.warning.withOpacity(0.1), borderRadius: BorderRadius.circular(8)),
+                                                        child: const Icon(Icons.share_rounded, size: 16, color: AppTheme.warning),
+                                                      ),
+                                                      const SizedBox(width: 10),
+                                                      const Text('Share', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
+                                                    ],
+                                                  ),
+                                                ),
+                                                PopupMenuItem(
+                                                  value: 'delete',
+                                                  child: Row(
+                                                    children: [
+                                                      Container(
+                                                        padding: const EdgeInsets.all(6),
+                                                        decoration: BoxDecoration(color: AppTheme.danger.withOpacity(0.1), borderRadius: BorderRadius.circular(8)),
+                                                        child: const Icon(Icons.delete_outline_rounded, size: 16, color: AppTheme.danger),
+                                                      ),
+                                                      const SizedBox(width: 10),
+                                                      const Text('Delete', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13, color: AppTheme.danger)),
+                                                    ],
+                                                  ),
+                                                ),
+                                              ],
+                                              child: Container(
+                                                padding: const EdgeInsets.all(6),
+                                                decoration: BoxDecoration(
+                                                  color: const Color(0xFFF8FAFC),
+                                                  borderRadius: BorderRadius.circular(12),
+                                                ),
+                                                child: const Icon(Icons.more_horiz_rounded, color: AppTheme.subtitle, size: 20),
+                                              ),
                                             ),
                                           ],
                                         ),
-                                        const SizedBox(height: 10),
-                                        Container(
-                                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                                          decoration: BoxDecoration(color: getStatusColor(status).withOpacity(0.12), borderRadius: BorderRadius.circular(999)),
-                                          child: Text(status, style: TextStyle(color: getStatusColor(status), fontWeight: FontWeight.w700, fontSize: 11)),
+                                        const SizedBox(height: 12),
+                                        Row(
+                                          children: [
+                                            Container(
+                                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                                              decoration: BoxDecoration(
+                                                color: getStatusColor(status).withOpacity(0.12),
+                                                borderRadius: BorderRadius.circular(999),
+                                              ),
+                                              child: Row(
+                                                mainAxisSize: MainAxisSize.min,
+                                                children: [
+                                                  Container(
+                                                    width: 6,
+                                                    height: 6,
+                                                    decoration: BoxDecoration(
+                                                      color: getStatusColor(status),
+                                                      shape: BoxShape.circle,
+                                                    ),
+                                                  ),
+                                                  const SizedBox(width: 5),
+                                                  Text(status, style: TextStyle(color: getStatusColor(status), fontWeight: FontWeight.w700, fontSize: 11)),
+                                                ],
+                                              ),
+                                            ),
+                                            const Spacer(),
+                                            Text('$score/100', style: TextStyle(color: AppTheme.text, fontWeight: FontWeight.w800, fontSize: 14)),
+                                          ],
                                         ),
                                         const SizedBox(height: 10),
+                                        ClipRRect(
+                                          borderRadius: BorderRadius.circular(999),
+                                          child: TweenAnimationBuilder<double>(
+                                            duration: const Duration(milliseconds: 700),
+                                            curve: Curves.easeOutCubic,
+                                            tween: Tween<double>(begin: 0, end: scoreProgress),
+                                            builder: (context, value, child) {
+                                              return LinearProgressIndicator(
+                                                value: value,
+                                                backgroundColor: const Color(0xFFF1F5F9),
+                                                valueColor: AlwaysStoppedAnimation<Color>(getStatusColor(status)),
+                                                minHeight: 6,
+                                              );
+                                            },
+                                          ),
+                                        ),
+                                        const SizedBox(height: 12),
                                         Row(
                                           children: [
                                             Expanded(child: _buildDetailChip('Income', (item['income'] as num).toStringAsFixed(0))),
@@ -616,20 +959,6 @@ class _HistoryPageState extends State<HistoryPage> with SingleTickerProviderStat
                                             const SizedBox(width: 8),
                                             Expanded(child: _buildDetailChip('Investments', (item['investments'] as num).toStringAsFixed(0))),
                                           ],
-                                        ),
-                                        const SizedBox(height: 10),
-                                        SizedBox(
-                                          width: double.infinity,
-                                          child: TextButton.icon(
-                                            onPressed: () => _showReportDetails(context, item),
-                                            icon: const Icon(Icons.visibility_rounded, size: 18),
-                                            label: const Text('View Report →'),
-                                            style: TextButton.styleFrom(
-                                              foregroundColor: AppTheme.primary,
-                                              alignment: Alignment.centerLeft,
-                                              padding: const EdgeInsets.symmetric(horizontal: 4),
-                                            ),
-                                          ),
                                         ),
                                       ],
                                     ),
