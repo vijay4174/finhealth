@@ -1,25 +1,20 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import 'app_theme.dart';
 import 'emergency_fund_service.dart';
 
 class EmergencyFundPage extends StatefulWidget {
   const EmergencyFundPage({super.key});
 
   @override
-  State<EmergencyFundPage> createState() =>
-      _EmergencyFundPageState();
+  State<EmergencyFundPage> createState() => _EmergencyFundPageState();
 }
 
-class _EmergencyFundPageState
-    extends State<EmergencyFundPage> {
-  final TextEditingController
-      expensesController =
-      TextEditingController();
-
-  final TextEditingController
-      currentFundController =
-      TextEditingController();
+class _EmergencyFundPageState extends State<EmergencyFundPage> {
+  final TextEditingController expensesController = TextEditingController();
+  final TextEditingController currentFundController = TextEditingController();
 
   bool isLoading = true;
   bool hasSavedFund = false;
@@ -34,19 +29,27 @@ class _EmergencyFundPageState
     12,
   ];
 
+  final Map<String, bool> _sectionVisible = {};
+
   @override
   void initState() {
     super.initState();
 
-    expensesController.addListener(
-      refreshCalculations,
-    );
-
-    currentFundController.addListener(
-      refreshCalculations,
-    );
+    expensesController.addListener(refreshCalculations);
+    currentFundController.addListener(refreshCalculations);
 
     loadEmergencyFund();
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      for (int index = 0; index < 10; index++) {
+        Future.delayed(Duration(milliseconds: 100 + (index * 80)), () {
+          if (!mounted) return;
+          setState(() {
+            _sectionVisible['section_$index'] = true;
+          });
+        });
+      }
+    });
   }
 
   void refreshCalculations() {
@@ -55,90 +58,44 @@ class _EmergencyFundPageState
     }
   }
 
-  double getAmount(
-    TextEditingController controller,
-  ) {
-    return double.tryParse(
-          controller.text.trim(),
-        ) ??
-        0;
+  double getAmount(TextEditingController controller) {
+    return double.tryParse(controller.text.trim()) ?? 0;
   }
 
-  double get monthlyEssentialExpenses =>
-      getAmount(expensesController);
-
-  double get currentFund =>
-      getAmount(currentFundController);
-
-  double get targetAmount =>
-      monthlyEssentialExpenses *
-      selectedTargetMonths;
+  double get monthlyEssentialExpenses => getAmount(expensesController);
+  double get currentFund => getAmount(currentFundController);
+  double get targetAmount => monthlyEssentialExpenses * selectedTargetMonths;
 
   double get remainingAmount {
-    final remaining =
-        targetAmount - currentFund;
-
+    final remaining = targetAmount - currentFund;
     return remaining > 0 ? remaining : 0;
   }
 
   double get exceededAmount {
-    final exceeded =
-        currentFund - targetAmount;
-
+    final exceeded = currentFund - targetAmount;
     return exceeded > 0 ? exceeded : 0;
   }
 
   double get actualProgress {
-    if (targetAmount <= 0) {
-      return 0;
-    }
-
+    if (targetAmount <= 0) return 0;
     return currentFund / targetAmount;
   }
 
-  double get progress {
-    return actualProgress.clamp(
-      0.0,
-      1.0,
-    );
-  }
+  double get progress => actualProgress.clamp(0.0, 1.0);
 
-  bool get isTargetCompleted {
-    return targetAmount > 0 &&
-        currentFund >= targetAmount;
-  }
-
-  bool get isTargetExceeded {
-    return targetAmount > 0 &&
-        currentFund > targetAmount;
-  }
+  bool get isTargetCompleted => targetAmount > 0 && currentFund >= targetAmount;
+  bool get isTargetExceeded => targetAmount > 0 && currentFund > targetAmount;
 
   Future<void> loadEmergencyFund() async {
-    final data = await EmergencyFundService
-        .getEmergencyFund();
+    final data = await EmergencyFundService.getEmergencyFund();
 
     if (data != null) {
-      final expenses =
-          (data['monthlyEssentialExpenses']
-                      as num?)
-                  ?.toDouble() ??
-              0;
+      final expenses = (data['monthlyEssentialExpenses'] as num?)?.toDouble() ?? 0;
+      final fund = (data['currentFund'] as num?)?.toDouble() ?? 0;
+      final months = (data['targetMonths'] as num?)?.toInt() ?? 6;
 
-      final fund =
-          (data['currentFund'] as num?)
-                  ?.toDouble() ??
-              0;
-
-      final months =
-          (data['targetMonths'] as num?)
-                  ?.toInt() ??
-              6;
-
-      expensesController.text =
-          expenses.toStringAsFixed(0);
-
-      currentFundController.text =
-          fund.toStringAsFixed(0);
+      expensesController.text = expenses.toStringAsFixed(0);
+      currentFundController.text = fund.toStringAsFixed(0);
 
       if (targetMonths.contains(months)) {
         selectedTargetMonths = months;
@@ -158,44 +115,18 @@ class _EmergencyFundPageState
   Future<void> saveEmergencyFund() async {
     FocusScope.of(context).unfocus();
 
-    if (expensesController.text
-        .trim()
-        .isEmpty) {
-      ScaffoldMessenger.of(context)
-          .showSnackBar(
-        const SnackBar(
-          content: Text(
-            'Please enter your monthly essential expenses',
-          ),
-        ),
-      );
-
+    if (expensesController.text.trim().isEmpty) {
+      _showSnackBar('Please enter your monthly essential expenses');
       return;
     }
 
     if (monthlyEssentialExpenses <= 0) {
-      ScaffoldMessenger.of(context)
-          .showSnackBar(
-        const SnackBar(
-          content: Text(
-            'Monthly essential expenses must be greater than ₹0',
-          ),
-        ),
-      );
-
+      _showSnackBar('Monthly essential expenses must be greater than ₹0');
       return;
     }
 
     if (selectedTargetMonths <= 0) {
-      ScaffoldMessenger.of(context)
-          .showSnackBar(
-        const SnackBar(
-          content: Text(
-            'Please select a valid target duration',
-          ),
-        ),
-      );
-
+      _showSnackBar('Please select a valid target duration');
       return;
     }
 
@@ -204,12 +135,9 @@ class _EmergencyFundPageState
     });
 
     try {
-      await EmergencyFundService
-          .saveEmergencyFund(
-        monthlyEssentialExpenses:
-            monthlyEssentialExpenses,
-        targetMonths:
-            selectedTargetMonths,
+      await EmergencyFundService.saveEmergencyFund(
+        monthlyEssentialExpenses: monthlyEssentialExpenses,
+        targetMonths: selectedTargetMonths,
         currentFund: currentFund,
       );
 
@@ -219,18 +147,11 @@ class _EmergencyFundPageState
         hasSavedFund = true;
       });
 
-      ScaffoldMessenger.of(context)
-          .showSnackBar(
-        SnackBar(
-          content: Text(
-            isTargetExceeded
-                ? 'Emergency fund saved. Your target is exceeded by ₹${exceededAmount.toStringAsFixed(0)}'
-                : isTargetCompleted
-                    ? 'Emergency fund saved. Target completed successfully!'
-                    : 'Emergency fund saved successfully',
-          ),
-        ),
-      );
+      _showSnackBar(isTargetExceeded
+          ? 'Emergency fund saved. Your target is exceeded by ₹${exceededAmount.toStringAsFixed(0)}'
+          : isTargetCompleted
+              ? 'Emergency fund saved. Target completed successfully!'
+              : 'Emergency fund saved successfully');
     } finally {
       if (mounted) {
         setState(() {
@@ -240,55 +161,41 @@ class _EmergencyFundPageState
     }
   }
 
+  void _showSnackBar(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      ),
+    );
+  }
+
   Future<void> clearEmergencyFund() async {
-    final shouldClear =
-        await showDialog<bool>(
+    final shouldClear = await showDialog<bool>(
       context: context,
       builder: (dialogContext) {
         return AlertDialog(
-          title: const Text(
-            'Clear Emergency Fund',
-          ),
-          content: const Text(
-            'Are you sure you want to delete your saved emergency fund plan?',
-          ),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+          title: const Text('Clear Emergency Fund'),
+          content: const Text('Are you sure you want to delete your saved emergency fund plan?'),
           actions: [
             TextButton(
-              onPressed: () {
-                Navigator.pop(
-                  dialogContext,
-                  false,
-                );
-              },
-              child: const Text(
-                'Cancel',
-              ),
+              onPressed: () => Navigator.pop(dialogContext, false),
+              child: const Text('Cancel'),
             ),
             TextButton(
-              onPressed: () {
-                Navigator.pop(
-                  dialogContext,
-                  true,
-                );
-              },
-              child: const Text(
-                'Clear',
-                style: TextStyle(
-                  color: Colors.red,
-                ),
-              ),
+              onPressed: () => Navigator.pop(dialogContext, true),
+              child: const Text('Clear', style: TextStyle(color: AppTheme.danger)),
             ),
           ],
         );
       },
     );
 
-    if (shouldClear != true) {
-      return;
-    }
+    if (shouldClear != true) return;
 
-    await EmergencyFundService
-        .clearEmergencyFund();
+    await EmergencyFundService.clearEmergencyFund();
 
     expensesController.clear();
     currentFundController.clear();
@@ -300,456 +207,437 @@ class _EmergencyFundPageState
       hasSavedFund = false;
     });
 
-    ScaffoldMessenger.of(context)
-        .showSnackBar(
-      const SnackBar(
-        content: Text(
-          'Emergency fund plan cleared',
-        ),
-      ),
-    );
+    _showSnackBar('Emergency fund plan cleared');
   }
 
   Color getProgressColor() {
-    final percentage =
-        actualProgress * 100;
-
-    if (percentage >= 100) {
-      return Colors.green;
-    } else if (percentage >= 50) {
-      return Colors.orange;
-    } else if (percentage > 0) {
-      return Colors.deepOrange;
-    }
-
-    return Colors.grey;
+    if (actualProgress >= 1.0) return AppTheme.success;
+    if (actualProgress >= 0.5) return AppTheme.warning;
+    if (actualProgress > 0) return Colors.deepOrange;
+    return AppTheme.subtitle;
   }
 
   String getProgressMessage() {
-    final percentage =
-        actualProgress * 100;
-
-    if (targetAmount <= 0) {
-      return 'Enter your essential expenses to calculate your target.';
-    }
-
-    if (isTargetExceeded) {
-      return 'Excellent! You have exceeded your emergency fund target by ₹${exceededAmount.toStringAsFixed(0)}.';
-    }
-
-    if (percentage >= 100) {
-      return 'Your emergency fund target is complete.';
-    }
-
-    if (percentage >= 75) {
-      return 'You are close to completing your emergency fund target.';
-    }
-
-    if (percentage >= 50) {
-      return 'You have completed half of your emergency fund target.';
-    }
-
-    if (percentage > 0) {
-      return 'Continue building your emergency fund consistently.';
-    }
-
+    if (targetAmount <= 0) return 'Enter your essential expenses to calculate your target.';
+    if (isTargetExceeded) return 'Excellent! You have exceeded your target by ₹${exceededAmount.toStringAsFixed(0)}.';
+    if (actualProgress >= 1.0) return 'Your emergency fund target is complete.';
+    if (actualProgress >= 0.75) return 'You are close to completing your emergency fund target.';
+    if (actualProgress >= 0.5) return 'You have completed half of your emergency fund target.';
+    if (actualProgress > 0) return 'Continue building your emergency fund consistently.';
     return 'Start building your emergency fund as soon as possible.';
   }
 
   String getProgressText() {
-    if (targetAmount <= 0) {
-      return '0% Complete';
-    }
-
-    if (isTargetExceeded) {
-      return 'Target Exceeded';
-    }
-
-    if (isTargetCompleted) {
-      return '100% Complete';
-    }
-
+    if (targetAmount <= 0) return '0% Complete';
+    if (isTargetExceeded) return 'Target Exceeded';
+    if (isTargetCompleted) return '100% Complete';
     return '${(actualProgress * 100).toStringAsFixed(0)}% Complete';
   }
 
-  Widget buildNumberField({
-    required String label,
-    required IconData icon,
-    required TextEditingController controller,
-  }) {
-    return TextField(
-      controller: controller,
-      keyboardType:
-          TextInputType.number,
-      inputFormatters: [
-        FilteringTextInputFormatter
-            .digitsOnly,
-      ],
-      decoration: InputDecoration(
-        labelText: label,
-        prefixIcon: Icon(icon),
-        prefixText: '₹ ',
-        border:
-            const OutlineInputBorder(),
-      ),
-    );
-  }
+  Widget _buildAnimatedSection({required Widget child, required int index}) {
+    final visible = _sectionVisible['section_$index'] ?? false;
 
-  Widget buildSummaryRow({
-    required String title,
-    required double amount,
-    Color? amountColor,
-  }) {
-    return Padding(
-      padding:
-          const EdgeInsets.symmetric(
-        vertical: 7,
-      ),
-      child: Row(
-        children: [
-          Expanded(
-            child: Text(title),
-          ),
-          Text(
-            '₹${amount.toStringAsFixed(0)}',
-            style: TextStyle(
-              fontWeight:
-                  FontWeight.bold,
-              color: amountColor,
-            ),
-          ),
-        ],
+    return AnimatedOpacity(
+      opacity: visible ? 1.0 : 0.0,
+      duration: const Duration(milliseconds: 500),
+      curve: Curves.easeOutCubic,
+      child: AnimatedSlide(
+        offset: visible ? Offset.zero : const Offset(0, 0.05),
+        duration: const Duration(milliseconds: 550),
+        curve: Curves.easeOutCubic,
+        child: child,
       ),
     );
   }
 
   @override
   void dispose() {
-    expensesController.removeListener(
-      refreshCalculations,
-    );
-
-    currentFundController.removeListener(
-      refreshCalculations,
-    );
-
+    expensesController.removeListener(refreshCalculations);
+    currentFundController.removeListener(refreshCalculations);
     expensesController.dispose();
     currentFundController.dispose();
-
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: AppTheme.background,
       appBar: AppBar(
-        title: const Text(
-          'Emergency Fund',
+        toolbarHeight: 96,
+        backgroundColor: AppTheme.background,
+        elevation: 0,
+        centerTitle: false,
+        title: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text('Emergency Fund',
+                style: TextStyle(fontSize: 22, fontWeight: FontWeight.w800, color: AppTheme.text)),
+            const SizedBox(height: 4),
+            Text('Build your financial safety net',
+                style: TextStyle(fontSize: 13, color: AppTheme.subtitle, fontWeight: FontWeight.w500)),
+          ],
         ),
-        centerTitle: true,
         actions: [
           if (hasSavedFund)
-            IconButton(
-              onPressed:
-                  clearEmergencyFund,
-              icon: const Icon(
-                Icons.delete_outline,
+            Padding(
+              padding: const EdgeInsets.only(right: 8),
+              child: IconButton(
+                onPressed: clearEmergencyFund,
+                icon: Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    shape: BoxShape.circle,
+                    boxShadow: [
+                      BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, 4))
+                    ],
+                  ),
+                  child: const Icon(Icons.delete_outline_rounded, color: AppTheme.danger, size: 22),
+                ),
               ),
-              tooltip:
-                  'Clear Emergency Fund',
             ),
         ],
       ),
       body: isLoading
-          ? const Center(
-              child:
-                  CircularProgressIndicator(),
-            )
+          ? const Center(child: CircularProgressIndicator())
           : SingleChildScrollView(
-              padding:
-                  const EdgeInsets.all(16),
-              child: Column(
+              padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
+              child: Center(
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 420),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      _buildAnimatedSection(
+                        index: 0,
+                        child: _buildGradientSummaryCard(),
+                      ),
+                      const SizedBox(height: 24),
+                      _buildAnimatedSection(
+                        index: 1,
+                        child: _buildSectionHeader('Configuration', 'Define your safety requirements'),
+                      ),
+                      const SizedBox(height: 16),
+                      _buildAnimatedSection(
+                        index: 2,
+                        child: _buildInputCard(),
+                      ),
+                      const SizedBox(height: 24),
+                      _buildAnimatedSection(
+                        index: 3,
+                        child: _buildSectionHeader('Duration Target', 'How many months of expenses to save?'),
+                      ),
+                      const SizedBox(height: 12),
+                      _buildAnimatedSection(
+                        index: 4,
+                        child: _buildTargetSelector(),
+                      ),
+                      const SizedBox(height: 24),
+                      _buildAnimatedSection(
+                        index: 5,
+                        child: _buildInsightCard(),
+                      ),
+                      const SizedBox(height: 24),
+                      _buildAnimatedSection(
+                        index: 6,
+                        child: _buildActionButtons(),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+    );
+  }
+
+  Widget _buildSectionHeader(String title, String subtitle) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(title, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: AppTheme.text)),
+        const SizedBox(height: 2),
+        Text(subtitle, style: const TextStyle(fontSize: 12, color: AppTheme.subtitle, fontWeight: FontWeight.w500)),
+      ],
+    );
+  }
+
+  Widget _buildGradientSummaryCard() {
+    final statusColor = getProgressColor();
+    return Container(
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(30),
+        gradient: const LinearGradient(
+          colors: [Color(0xFF0F172A), Color(0xFF1E293B), Color(0xFF334155)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFF0F172A).withOpacity(0.3),
+            blurRadius: 25,
+            offset: const Offset(0, 15),
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Icon(
-                    Icons.shield_outlined,
-                    size: 70,
-                    color:
-                        Colors.deepPurple,
-                  ),
-
-                  const SizedBox(
-                    height: 15,
-                  ),
-
-                  const Text(
-                    'Build Your Financial Safety Net',
-                    textAlign:
-                        TextAlign.center,
-                    style: TextStyle(
-                      fontSize: 24,
-                      fontWeight:
-                          FontWeight.bold,
-                    ),
-                  ),
-
-                  const SizedBox(
-                    height: 10,
-                  ),
-
-                  const Text(
-                    'Plan enough savings to cover your essential expenses during unexpected situations.',
-                    textAlign:
-                        TextAlign.center,
-                  ),
-
-                  const SizedBox(
-                    height: 30,
-                  ),
-
-                  buildNumberField(
-                    label:
-                        'Monthly Essential Expenses',
-                    icon:
-                        Icons.receipt_long,
-                    controller:
-                        expensesController,
-                  ),
-
-                  const SizedBox(
-                    height: 25,
-                  ),
-
-                  const Align(
-                    alignment:
-                        Alignment.centerLeft,
-                    child: Text(
-                      'Select Target Duration',
-                      style: TextStyle(
-                        fontSize: 20,
-                        fontWeight:
-                            FontWeight.bold,
-                      ),
-                    ),
-                  ),
-
-                  const SizedBox(
-                    height: 12,
-                  ),
-
-                  Wrap(
-                    spacing: 10,
-                    runSpacing: 10,
-                    children:
-                        targetMonths.map(
-                      (months) {
-                        return ChoiceChip(
-                          label: Text(
-                            '$months Months',
-                          ),
-                          selected:
-                              selectedTargetMonths ==
-                                  months,
-                          onSelected:
-                              (selected) {
-                            if (selected) {
-                              setState(() {
-                                selectedTargetMonths =
-                                    months;
-                              });
-                            }
-                          },
-                        );
-                      },
-                    ).toList(),
-                  ),
-
-                  const SizedBox(
-                    height: 25,
-                  ),
-
-                  buildNumberField(
-                    label:
-                        'Current Emergency Fund',
-                    icon: Icons.savings,
-                    controller:
-                        currentFundController,
-                  ),
-
-                  const SizedBox(
-                    height: 25,
-                  ),
-
-                  Card(
-                    elevation: 6,
-                    child: Padding(
-                      padding:
-                          const EdgeInsets.all(
-                        18,
-                      ),
-                      child: Column(
-                        children: [
-                          const Text(
-                            'Emergency Fund Summary',
-                            style: TextStyle(
-                              fontSize: 22,
-                              fontWeight:
-                                  FontWeight.bold,
-                            ),
-                          ),
-
-                          const SizedBox(
-                            height: 18,
-                          ),
-
-                          buildSummaryRow(
-                            title:
-                                'Monthly Essential Expenses',
-                            amount:
-                                monthlyEssentialExpenses,
-                          ),
-
-                          buildSummaryRow(
-                            title:
-                                '$selectedTargetMonths-Month Target',
-                            amount:
-                                targetAmount,
-                          ),
-
-                          buildSummaryRow(
-                            title:
-                                'Current Fund',
-                            amount:
-                                currentFund,
-                          ),
-
-                          if (!isTargetExceeded)
-                            buildSummaryRow(
-                              title:
-                                  'Remaining Amount',
-                              amount:
-                                  remainingAmount,
-                            ),
-
-                          if (isTargetExceeded)
-                            buildSummaryRow(
-                              title:
-                                  'Target Exceeded By',
-                              amount:
-                                  exceededAmount,
-                              amountColor:
-                                  Colors.green,
-                            ),
-
-                          const SizedBox(
-                            height: 18,
-                          ),
-
-                          LinearProgressIndicator(
-                            value: progress,
-                            minHeight: 12,
-                            borderRadius:
-                                BorderRadius.circular(
-                              10,
-                            ),
-                            color:
-                                getProgressColor(),
-                          ),
-
-                          const SizedBox(
-                            height: 10,
-                          ),
-
-                          Text(
-                            getProgressText(),
-                            style: TextStyle(
-                              fontSize: 18,
-                              fontWeight:
-                                  FontWeight.bold,
-                              color:
-                                  getProgressColor(),
-                            ),
-                          ),
-
-                          const SizedBox(
-                            height: 15,
-                          ),
-
-                          Row(
-                            crossAxisAlignment:
-                                CrossAxisAlignment
-                                    .start,
-                            children: [
-                              Icon(
-                                isTargetCompleted
-                                    ? Icons.verified
-                                    : Icons
-                                        .info_outline,
-                                color:
-                                    getProgressColor(),
-                              ),
-
-                              const SizedBox(
-                                width: 10,
-                              ),
-
-                              Expanded(
-                                child: Text(
-                                  getProgressMessage(),
-                                  style: TextStyle(
-                                    fontWeight:
-                                        FontWeight.bold,
-                                    color:
-                                        getProgressColor(),
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-
-                  const SizedBox(
-                    height: 25,
-                  ),
-
+                  Text('Current Fund', style: TextStyle(color: Colors.white.withOpacity(0.7), fontSize: 14)),
+                  const SizedBox(height: 4),
+                  Text('₹${currentFund.toStringAsFixed(0)}',
+                      style: const TextStyle(color: Colors.white, fontSize: 32, fontWeight: FontWeight.w800)),
+                ],
+              ),
+              Stack(
+                alignment: Alignment.center,
+                children: [
                   SizedBox(
-                    width:
-                        double.infinity,
-                    child:
-                        ElevatedButton.icon(
-                      onPressed: isSaving
-                          ? null
-                          : saveEmergencyFund,
-                      icon: isSaving
-                          ? const SizedBox(
-                              width: 18,
-                              height: 18,
-                              child:
-                                  CircularProgressIndicator(
-                                strokeWidth: 2,
-                              ),
-                            )
-                          : const Icon(
-                              Icons.save,
-                            ),
-                      label: Text(
-                        isSaving
-                            ? 'Saving...'
-                            : hasSavedFund
-                                ? 'Update Emergency Fund'
-                                : 'Save Emergency Fund',
-                      ),
+                    width: 80,
+                    height: 80,
+                    child: CircularProgressIndicator(
+                      value: progress,
+                      strokeWidth: 8,
+                      backgroundColor: Colors.white.withOpacity(0.1),
+                      valueColor: AlwaysStoppedAnimation<Color>(statusColor),
+                      strokeCap: StrokeCap.round,
                     ),
                   ),
-
-                  const SizedBox(
-                    height: 30,
+                  Text(
+                    '${(progress * 100).toInt()}%',
+                    style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 16),
                   ),
                 ],
               ),
+            ],
+          ),
+          const SizedBox(height: 24),
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.08),
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(color: Colors.white.withOpacity(0.1)),
             ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
+              children: [
+                _buildMiniStat('Target', '₹${targetAmount.toStringAsFixed(0)}'),
+                Container(width: 1, height: 30, color: Colors.white.withOpacity(0.1)),
+                _buildMiniStat(isTargetExceeded ? 'Exceeded' : 'Remaining',
+                    '₹${(isTargetExceeded ? exceededAmount : remainingAmount).toStringAsFixed(0)}'),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildMiniStat(String label, String value) {
+    return Column(
+      children: [
+        Text(label, style: TextStyle(color: Colors.white.withOpacity(0.6), fontSize: 11, fontWeight: FontWeight.w600)),
+        const SizedBox(height: 4),
+        Text(value, style: const TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.w700)),
+      ],
+    );
+  }
+
+  Widget _buildInputCard() {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(28),
+        boxShadow: [
+          BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 20, offset: const Offset(0, 10))
+        ],
+      ),
+      child: Column(
+        children: [
+          _buildPremiumTextField(
+            label: 'Monthly Expenses',
+            controller: expensesController,
+            icon: Icons.receipt_long_rounded,
+          ),
+          const SizedBox(height: 20),
+          _buildPremiumTextField(
+            label: 'Current Savings',
+            controller: currentFundController,
+            icon: Icons.account_balance_wallet_rounded,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPremiumTextField({
+    required String label,
+    required TextEditingController controller,
+    required IconData icon,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(label, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: AppTheme.text)),
+        const SizedBox(height: 8),
+        TextField(
+          controller: controller,
+          keyboardType: TextInputType.number,
+          inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+          style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 16),
+          decoration: InputDecoration(
+            prefixIcon: Icon(icon, color: AppTheme.primary, size: 20),
+            prefixText: '₹ ',
+            prefixStyle: const TextStyle(fontWeight: FontWeight.w700, color: AppTheme.primary),
+            filled: true,
+            fillColor: AppTheme.background,
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(16),
+              borderSide: BorderSide.none,
+            ),
+            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildTargetSelector() {
+    return Row(
+      children: targetMonths.map((months) {
+        final isSelected = selectedTargetMonths == months;
+        return Expanded(
+          child: GestureDetector(
+            onTap: () => setState(() => selectedTargetMonths = months),
+            child: Container(
+              margin: const EdgeInsets.symmetric(horizontal: 4),
+              padding: const EdgeInsets.symmetric(vertical: 14),
+              decoration: BoxDecoration(
+                color: isSelected ? AppTheme.primary : Colors.white,
+                borderRadius: BorderRadius.circular(16),
+                boxShadow: [
+                  if (isSelected)
+                    BoxShadow(
+                      color: AppTheme.primary.withOpacity(0.25),
+                      blurRadius: 10,
+                      offset: const Offset(0, 4),
+                    )
+                  else
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.03),
+                      blurRadius: 5,
+                      offset: const Offset(0, 2),
+                    ),
+                ],
+                border: Border.all(
+                  color: isSelected ? AppTheme.primary : Colors.transparent,
+                  width: 1.5,
+                ),
+              ),
+              child: Center(
+                child: Text(
+                  '$months m',
+                  style: TextStyle(
+                    color: isSelected ? Colors.white : AppTheme.text,
+                    fontWeight: FontWeight.w800,
+                    fontSize: 14,
+                  ),
+                ),
+              ),
+            ),
+          ),
+        );
+      }).toList(),
+    );
+  }
+
+  Widget _buildInsightCard() {
+    final statusColor = getProgressColor();
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: statusColor.withOpacity(0.08),
+        borderRadius: BorderRadius.circular(28),
+        border: Border.all(color: statusColor.withOpacity(0.12)),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: statusColor.withOpacity(0.15),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(
+              isTargetCompleted ? Icons.verified_rounded : Icons.lightbulb_rounded,
+              color: statusColor,
+              size: 24,
+            ),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  getProgressText(),
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: statusColor),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  getProgressMessage(),
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: statusColor.withOpacity(0.8),
+                    fontWeight: FontWeight.w600,
+                    height: 1.4,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildActionButtons() {
+    return Column(
+      children: [
+        SizedBox(
+          width: double.infinity,
+          child: ElevatedButton(
+            onPressed: isSaving ? null : saveEmergencyFund,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppTheme.primary,
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(vertical: 18),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+              elevation: 4,
+              shadowColor: AppTheme.primary.withOpacity(0.4),
+            ),
+            child: isSaving
+                ? const SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(strokeWidth: 2.5, color: Colors.white),
+                  )
+                : Text(
+                    hasSavedFund ? 'Update Strategy' : 'Initialize Plan',
+                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w800, letterSpacing: 0.5),
+                  ),
+          ),
+        ),
+      ],
     );
   }
 }
